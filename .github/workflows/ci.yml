@@ -1,0 +1,129 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Root app (admin) dependencies via npm.
+      - run: npm ci
+      - run: npm ci --prefix backend
+      - run: npm ci --prefix storefront
+
+  lint-typecheck:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Lint (root/admin)
+        run: npm run lint
+      - name: Storefront typecheck
+        run: npm run typecheck --prefix storefront
+      - name: Backend typecheck
+        run: npm run typecheck --prefix backend
+      - name: Backend test typecheck
+        run: npm run test:typecheck --prefix backend
+
+  backend-tests:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --prefix backend
+      # Cache in-memory MongoDB binaries (downloaded on first use).
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}
+      - name: Backend integration tests (Vitest + Supertest)
+        run: npm test --prefix backend
+
+  storefront-tests:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm ci --prefix storefront
+      - name: Storefront unit / component / integration / contract tests
+        run: npm test --prefix storefront
+
+  build:
+    needs: [lint-typecheck, backend-tests, storefront-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm ci --prefix storefront
+      - name: Build storefront (Vite + Nitro SSR)
+        run: npm run build --prefix storefront
+      - name: Bundle size summary (report only — no arbitrary budget gate)
+        run: node scripts/bundle-summary.mjs storefront/.output
+      - name: Release-readiness check (provider-neutral, report-only)
+        run: node scripts/release-check.mjs
+
+  # Phase 12 — production hardening gates.
+  # Self-contained: no production credentials are required (the security script
+  # injects its own inert placeholder gateway keys).
+  phase12-prod-checks:
+    needs: [lint-typecheck, backend-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --prefix backend
+      - name: Production configuration validation (fail-fast env checks)
+        run: npm run test:typecheck --prefix backend
+      - name: Production security verification (headers, CORS, error envelopes)
+        run: npm run check:prod-security --prefix backend
+
+  e2e-accessibility:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm ci --prefix storefront
+      - run: npm ci --prefix backend
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/ms-playwright
+            ~/.cache/mongodb-binaries
+          key: e2e-bins-${{ runner.os }}-${{ hashFiles('storefront/package-lock.json') }}
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium --prefix storefront
+        working-directory: storefront
+      - name: Playwright E2E + axe accessibility
+        run: npm run test:e2e --prefix storefront
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-artifacts
+          path: storefront/test-results/

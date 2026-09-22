@@ -16,6 +16,8 @@ export type Order = {
   amount: number;
   payment: "Credit Card" | "Cash on Delivery" | "Digital Wallet" | "Bank Transfer";
   paymentStatus: "Paid" | "Pending" | "Refunded" | "Failed";
+  /** Gateway provider when the method is gateway-settled (Fonepay QR). */
+  provider?: "FONEPAY" | "CYBERSOURCE";
   status: OrderStatus;
   region: string;
 };
@@ -167,6 +169,10 @@ export const orders: Order[] = (() => {
     const last = at(lastNames, Math.floor(r() * lastNames.length));
     const items = 1 + Math.floor(r() * 3);
     const status = at(orderStatuses, Math.floor(r() * orderStatuses.length));
+    const method = at(payments, Math.floor(r() * payments.length));
+    // Digital Wallet orders are gateway-settled through the Fonepay QR
+    // gateway (the store's online wallet/QR payment method).
+    const provider = method === "Digital Wallet" ? "FONEPAY" : undefined;
     return {
       id: `ORD-${10284 + i}`,
       customer: `${first} ${last}`,
@@ -175,9 +181,10 @@ export const orders: Order[] = (() => {
       items,
       date: dateStr(Math.floor(r() * 30)),
       amount: Math.round(p[3] * items * (0.9 + r() * 0.3) * 100) / 100,
-      payment: at(payments, Math.floor(r() * payments.length)),
+      payment: method,
       paymentStatus:
         status === "Refunded" ? "Refunded" : status === "Pending" ? "Pending" : "Paid",
+      ...(provider ? { provider } : {}),
       status,
       region: at(regions, Math.floor(r() * regions.length)),
     } satisfies Order;
@@ -314,7 +321,7 @@ export const activityLog = [
 export const notifications = [
   { type: "order", title: "New order #ORD-10348", body: "Elena Petrov placed an order for $1,284.00", time: "2 min ago" },
   { type: "stock", title: "Low stock alert", body: "Halo Wireless Earbuds Gen 3 — 6 units left", time: "18 min ago" },
-  { type: "payment", title: "Payment received", body: "$4,210.00 settled via Stripe payout", time: "1 hr ago" },
+  { type: "payment", title: "Payment received", body: "$4,210.00 settled via Fonepay QR payment", time: "1 hr ago" },
   { type: "refund", title: "Refund requested", body: "Order #ORD-10310 — customer reported damage", time: "3 hrs ago" },
   { type: "customer", title: "New customer registered", body: "Tobias Bergman joined the Loyalty group", time: "5 hrs ago" },
   { type: "review", title: "New review pending", body: "4.0★ on Nordic Oak Coffee Table", time: "Yesterday" },

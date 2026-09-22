@@ -100,17 +100,17 @@ src/
 
 ### Requirements
 
-Make sure the following are installed:
-
-* Node.js
-* Yarn
+* Node.js 22 (`"engines": { "node": ">=22" }` in all three manifests)
+* npm (package management is npm-only; reproducible installs come from the
+  committed `package-lock.json` files in the repo root, `backend/` and
+  `storefront/`)
 
 ### Installation
 
 Clone the repository and install dependencies:
 
 ```bash
-yarn install
+npm install
 ```
 
 ### Development
@@ -118,7 +118,7 @@ yarn install
 Start the development server:
 
 ```bash
-yarn dev
+npm run dev
 ```
 
 The application will be available at:
@@ -132,13 +132,13 @@ http://localhost:8080
 Create a production build:
 
 ```bash
-yarn build
+npm run build
 ```
 
 ### Preview Production Build
 
 ```bash
-yarn preview
+npm run preview
 ```
 
 ## Code Quality
@@ -146,13 +146,13 @@ yarn preview
 Run ESLint:
 
 ```bash
-yarn lint
+npm run lint
 ```
 
 Format the project:
 
 ```bash
-yarn format
+npm run format
 ```
 
 ## Architecture

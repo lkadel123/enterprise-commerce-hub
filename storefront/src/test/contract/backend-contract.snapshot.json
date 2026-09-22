@@ -1,0 +1,25 @@
+{
+  "_comment": "Generated from backend/src/modules validators. Field keys use `name` for required and `name?` for optional. Update deliberately when backend contracts change.",
+  "createCustomerAddress": {
+    "label": "string(max=100)",
+    "line1": "string(max=255)",
+    "line2?": "string(max=255)",
+    "city": "string(max=100)",
+    "state?": "string(max=100)",
+    "postalCode": "string(max=20)",
+    "country": "string(max=100)",
+    "isDefault?": "boolean"
+  },
+  "customerLogin": {
+    "email": "string(max=254)",
+    "password": "string(max=128)"
+  },
+  "customerOrderAddress": {
+    "line1": "string(max=200)",
+    "line2?": "string(max=200)",
+    "city": "string(max=100)",
+    "state?": "string(max=100)",
+    "postalCode?": "string(max=20)",
+    "country": "string(max=100)"
+  }
+}

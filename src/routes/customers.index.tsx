@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Download, Mail, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Download, Search } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/layout/AppShell";
@@ -15,7 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { currency, customers } from "@/lib/mock-data";
+import { customersApi } from "@/lib/api/commerce";
+import type { CustomerDto } from "@/lib/api/types";
+import { formatNpr } from "@/lib/utils";
 
 export const Route = createFileRoute("/customers/")({
   head: () => ({
@@ -34,46 +37,68 @@ export const Route = createFileRoute("/customers/")({
 
 const PAGE_SIZE = 10;
 
+function customersToCsv(rows: CustomerDto[]): string {
+  const header = ["Name", "Email", "Phone", "Group", "Status", "Orders", "Total spent", "AOV", "Joined"];
+  const lines = rows.map((c) =>
+    [c.name, c.email, c.phone ?? "", c.group, c.status, c.orders, c.spent, c.aov, c.joinedAt]
+      .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+      .join(","),
+  );
+  return [header.join(","), ...lines].join("\n");
+}
+
 function CustomersPage() {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("all");
   const [page, setPage] = useState(1);
 
-  const filtered = useMemo(
-    () =>
-      customers.filter(
-        (c) =>
-          (c.name.toLowerCase().includes(query.toLowerCase()) ||
-            c.email.toLowerCase().includes(query.toLowerCase())) &&
-          (group === "all" || c.group === group),
-      ),
-    [query, group],
-  );
+  const params = {
+    ...(query.trim() ? { q: query.trim() } : {}),
+    ...(group !== "all" ? { group } : {}),
+    page,
+    pageSize: PAGE_SIZE,
+  };
+  const customersQuery = useQuery({
+    queryKey: ["admin", "customers", params],
+    queryFn: () => customersApi.list(params),
+  });
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const current = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const totalSpend = customers.reduce((s, c) => s + c.spent, 0);
+  const rows = customersQuery.data?.data ?? [];
+  const meta = customersQuery.data?.meta;
+  const total = meta?.total ?? 0;
+  const pageCount = meta?.totalPages ?? 1;
+
+  const exportCsv = () => {
+    if (rows.length === 0) {
+      toast.info("No customers on this page to export");
+      return;
+    }
+    const csv = customersToCsv(rows);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `customers-page-${page}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV downloaded for the current page");
+  };
 
   return (
     <AppShell>
       <PageHeader
         title="Customers"
-        description="24,892 registered shoppers across all storefronts."
+        description={`${total.toLocaleString()} registered customers matching current filters`}
         actions={
-          <>
-            <Button variant="outline" size="sm" className="h-9" onClick={() => toast.success("Customer export queued")}>
-              <Download className="h-4 w-4" /> Export
-            </Button>
-            <Button size="sm" className="h-9"><Mail className="h-4 w-4" /> Email segment</Button>
-          </>
+          <Button variant="outline" size="sm" className="h-9" onClick={exportCsv}>
+            <Download className="h-4 w-4" /> Export page CSV
+          </Button>
         }
       />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Customers" value="24,892" delta={14.2} note="612 new this period" />
-        <StatCard label="Returning Rate" value="38.4%" delta={3.1} note="Repeat purchase within 90 days" />
-        <StatCard label="Lifetime Value" value={currency(totalSpend / customers.length, 0)} delta={7.4} note="Average per customer" />
-        <StatCard label="Churn Risk" value="1,204" delta={-2.6} note="No order in 120 days" />
+        <StatCard label="Total Customers" value={total.toLocaleString()} note="Matching current filters" />
+        <StatCard label="Page Results" value={String(rows.length)} note={`Page ${page} of ${pageCount}`} />
       </div>
 
       <Section className="mt-4" bodyClassName="p-0">
@@ -109,7 +134,14 @@ function CustomersPage() {
               </tr>
             </thead>
             <tbody>
-              {current.map((c) => (
+              {customersQuery.isPending ? (
+                <tr><td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">Loading customers…</td></tr>
+              ) : customersQuery.isError ? (
+                <tr><td colSpan={9} className="px-4 py-10 text-center text-sm text-destructive">Couldn't load customers. Check your connection and try again.</td></tr>
+              ) : rows.length === 0 ? (
+                <tr><td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">No customers match the current filters.</td></tr>
+              ) : (
+              rows.map((c) => (
                 <tr key={c.id} className="border-t transition-colors hover:bg-surface-muted/50">
                   <td className="px-4 py-2.5">
                     <Link to="/customers/$customerId" params={{ customerId: c.id }} className="flex items-center gap-3">
@@ -124,21 +156,26 @@ function CustomersPage() {
                       </div>
                     </Link>
                   </td>
-                  <td className="num px-4 py-2.5 whitespace-nowrap text-muted-foreground">{c.phone}</td>
+                  <td className="num px-4 py-2.5 whitespace-nowrap text-muted-foreground">{c.phone ?? "—"}</td>
                   <td className="num px-4 py-2.5 text-right">{c.orders}</td>
-                  <td className="num px-4 py-2.5 text-right font-medium">{currency(c.spent)}</td>
-                  <td className="num px-4 py-2.5 text-right text-muted-foreground">{currency(c.spent / c.orders)}</td>
-                  <td className="num px-4 py-2.5 whitespace-nowrap text-muted-foreground">{c.lastOrder}</td>
+                  <td className="num px-4 py-2.5 text-right font-medium">{formatNpr(c.spent)}</td>
+                  <td className="num px-4 py-2.5 text-right text-muted-foreground">{formatNpr(c.aov)}</td>
+                  <td className="num px-4 py-2.5 whitespace-nowrap text-muted-foreground">
+                    {c.lastOrder ? new Date(c.lastOrder).toLocaleDateString() : "—"}
+                  </td>
                   <td className="px-4 py-2.5 whitespace-nowrap">{c.group}</td>
                   <td className="px-4 py-2.5"><StatusBadge status={c.status} /></td>
-                  <td className="num px-4 py-2.5 whitespace-nowrap text-muted-foreground">{c.joined}</td>
+                  <td className="num px-4 py-2.5 whitespace-nowrap text-muted-foreground">
+                    {new Date(c.joinedAt).toLocaleDateString()}
+                  </td>
                 </tr>
-              ))}
+              ))
+              )}
             </tbody>
           </table>
         </div>
 
-        <TablePagination page={page} pageCount={pageCount} total={filtered.length} onPage={setPage} />
+        <TablePagination page={page} pageCount={pageCount} total={total} onPage={setPage} />
       </Section>
     </AppShell>
   );

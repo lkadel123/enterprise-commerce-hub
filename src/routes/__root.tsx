@@ -12,6 +12,8 @@ import { type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AdminAuthProvider } from "@/lib/auth/AdminAuthContext";
+import { RequireAdminAuth } from "@/lib/auth/RequireAdminAuth";
 
 function NotFoundComponent() {
   return (
@@ -89,6 +91,12 @@ function ErrorComponent({
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
 }>()({
+  beforeLoad: async ({ location }) => {
+    // /login is the only public route; the transport will set the auth flag
+    // on 401 for every other route.
+    if (location.pathname === "/login") return;
+    return;
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -166,9 +174,17 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider delayDuration={200}>
-        <Outlet />
-        <Toaster position="bottom-right" />
+        <AdminAuthProvider>
+          <GuardedOutlet />
+          <Toaster position="bottom-right" />
+        </AdminAuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
+}
+
+function GuardedOutlet() {
+  const router = useRouter();
+  const isLogin = router.state.location.pathname === "/login";
+  return isLogin ? <Outlet /> : <RequireAdminAuth><Outlet /></RequireAdminAuth>;
 }

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -18,10 +18,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { toast } from "sonner";
 
 import { AppShell } from "@/components/layout/AppShell";
-import { PageHeader, Section, StatCard } from "@/components/kit";
+import { EmptyState, PageHeader, Section, StatCard } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,14 +31,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  categorySales,
-  compact,
-  currency,
-  paymentSplit,
-  regionSales,
-  revenueSeries,
-} from "@/lib/mock-data";
+import { AdminApiError } from "@/lib/api/client";
+import { reportsApi } from "@/lib/api/reports";
+import { useAdminAuth } from "@/lib/auth/AdminAuthContext";
+import { PermissionDenied } from "@/lib/auth/RequireAdminAuth";
+import { buildReportCsv, downloadCsv } from "@/lib/reports/export";
+import { formatNpr, formatNprCompact } from "@/lib/utils";
+import type { ReactNode } from "react";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({
@@ -72,8 +70,76 @@ const tooltipStyle = {
   color: "var(--color-popover-foreground)",
 };
 
+function ChartSkeleton({ height = 300 }: { height?: number }) {
+  return <div className="animate-pulse rounded-md bg-surface-muted" style={{ height }} aria-busy="true" />;
+}
+
+function SectionError({ error }: { error: unknown }) {
+  const status = error instanceof AdminApiError ? error.status : undefined;
+  return (
+    <div className="flex flex-col items-center justify-center gap-1 py-10 text-center">
+      <p className="text-sm font-medium text-destructive">
+        {status === 403 ? "Access denied" : "Couldn't load this data"}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        {status === 403 ? "Your role does not include permission to view reports." : "Check your connection and try again."}
+      </p>
+    </div>
+  );
+}
+
+function ReportsPermissionGate({ children }: { children: ReactNode }) {
+  const { permissions } = useAdminAuth();
+  const allowed = permissions.some((p) => p.module === "reports");
+  if (!allowed) return <PermissionDenied feature="reports and analytics" />;
+  return <>{children}</>;
+}
+
+/** Dynamic default window: trailing 90 days (never a hardcoded business range). */
+function defaultWindow(): { from: string; to: string } {
+  const today = new Date();
+  return {
+    from: new Date(today.getTime() - 90 * 86_400_000).toISOString().slice(0, 10),
+    to: today.toISOString().slice(0, 10),
+  };
+}
+
 function ReportsPage() {
   const [report, setReport] = useState("sales");
+  const initialWindow = useMemo(defaultWindow, []);
+  const [from, setFrom] = useState(initialWindow.from);
+  const [to, setTo] = useState(initialWindow.to);
+
+  // The selected range drives every request; the backend buckets monthly.
+  const params = useMemo(
+    () => ({ from, to, granularity: "monthly" as const }),
+    [from, to],
+  );
+  const rangeParams = useMemo(
+    () => ({ from, to }),
+    [from, to],
+  );
+
+  // All metrics come from the backend (`/reports/*`, paid orders only).
+  const revenue = reportsApi.useRevenue(params);
+  const categorySales = reportsApi.useCategories(rangeParams);
+  const paymentSplit = reportsApi.usePaymentMethods(rangeParams);
+  const regionSales = reportsApi.useRegions(rangeParams);
+  const topProducts = reportsApi.useTopProducts(10);
+
+  const revenuePoints = revenue.data ?? [];
+  const rangeRevenue = revenuePoints.reduce((sum, p) => sum + (Number.isFinite(p.revenue) ? p.revenue : 0), 0);
+  const rangeProfit = revenuePoints.reduce((sum, p) => sum + (Number.isFinite(p.profit) ? p.profit : 0), 0);
+  const rangeOrders = revenuePoints.reduce((sum, p) => sum + (Number.isFinite(p.orders) ? p.orders : 0), 0);
+  const regionTotal = (regionSales.data ?? []).reduce((sum, r) => sum + r.value, 0) || 1;
+
+  const exportCsv = () => {
+    if (revenuePoints.length === 0) return;
+    downloadCsv(
+      `sales-report_${from}_to_${to}.csv`,
+      buildReportCsv(revenuePoints),
+    );
+  };
 
   return (
     <AppShell>
@@ -82,13 +148,14 @@ function ReportsPage() {
         description="Build, schedule and export operational reports."
         actions={
           <>
-            <Button variant="outline" size="sm" className="h-9" onClick={() => toast.success("CSV export started")}><FileSpreadsheet className="h-4 w-4" /> CSV</Button>
-            <Button variant="outline" size="sm" className="h-9" onClick={() => toast.success("Excel export started")}><Download className="h-4 w-4" /> Excel</Button>
-            <Button size="sm" className="h-9" onClick={() => toast.success("PDF report generating")}><FileText className="h-4 w-4" /> PDF</Button>
+            <Button variant="outline" size="sm" className="h-9" onClick={exportCsv} disabled={revenuePoints.length === 0}><FileSpreadsheet className="h-4 w-4" /> CSV</Button>
+            <Button variant="outline" size="sm" className="h-9" disabled title="Excel export is not implemented yet"><Download className="h-4 w-4" /> Excel</Button>
+            <Button size="sm" className="h-9" disabled title="PDF report is not implemented yet"><FileText className="h-4 w-4" /> PDF</Button>
           </>
         }
       />
 
+      <ReportsPermissionGate>
       <Section className="mb-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="space-y-1.5">
@@ -98,22 +165,20 @@ function ReportsPage() {
               <SelectContent>
                 <SelectItem value="sales">Sales report</SelectItem>
                 <SelectItem value="products">Product performance</SelectItem>
-                <SelectItem value="customers">Customer report</SelectItem>
-                <SelectItem value="inventory">Inventory report</SelectItem>
-                <SelectItem value="tax">Tax report</SelectItem>
+                <SelectItem value="customers" disabled>Customer report (unavailable)</SelectItem>
+                <SelectItem value="inventory" disabled>Inventory report (unavailable)</SelectItem>
+                <SelectItem value="tax" disabled>Tax report (unavailable)</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5"><Label className="text-xs">From</Label><Input type="date" className="h-9" defaultValue="2026-01-01" /></div>
-          <div className="space-y-1.5"><Label className="text-xs">To</Label><Input type="date" className="h-9" defaultValue="2026-08-09" /></div>
+          <div className="space-y-1.5"><Label className="text-xs">From</Label><Input type="date" className="h-9" value={from} max={to} onChange={(e) => setFrom(e.target.value)} /></div>
+          <div className="space-y-1.5"><Label className="text-xs">To</Label><Input type="date" className="h-9" value={to} min={from} onChange={(e) => setTo(e.target.value)} /></div>
           <div className="space-y-1.5">
             <Label className="text-xs">Comparison</Label>
-            <Select defaultValue="prev">
+            <Select defaultValue="none" disabled>
               <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="prev">Previous period</SelectItem>
-                <SelectItem value="year">Same period last year</SelectItem>
-                <SelectItem value="none">No comparison</SelectItem>
+                <SelectItem value="none">No comparison (unsupported)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -121,17 +186,24 @@ function ReportsPage() {
       </Section>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Gross Revenue" value={currency(1414200, 0)} delta={18.6} note="Year to date" />
-        <StatCard label="Net Profit" value={currency(462750, 0)} delta={12.4} note="32.7% margin" />
-        <StatCard label="Orders" value="89,578" delta={9.8} note="Across 5 regions" />
-        <StatCard label="Refund Rate" value="1.9%" delta={-0.4} note="Below 2.5% target" />
+        <StatCard label="Gross Revenue" value={revenue.isLoading ? "…" : formatNpr(rangeRevenue)} note="Paid orders in range" />
+        <StatCard label="Net Profit" value={revenue.isLoading ? "…" : formatNpr(rangeProfit)} note="Paid orders in range" />
+        <StatCard label="Orders" value={revenue.isLoading ? "…" : rangeOrders.toLocaleString()} note="Paid orders in range" />
+        <StatCard label="Refund Rate" value="—" note="Business definition pending" />
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Section className="xl:col-span-2" title="Revenue vs. profit" description="Monthly performance for the selected range">
+          {revenue.isLoading ? (
+            <ChartSkeleton />
+          ) : revenue.isError ? (
+            <SectionError error={revenue.error} />
+          ) : revenuePoints.length === 0 ? (
+            <EmptyState title="No revenue in this range" description="Paid orders within the selected dates will populate this chart." />
+          ) : (
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={revenueSeries} margin={{ left: -12, right: 8, top: 8 }}>
+              <AreaChart data={revenuePoints} margin={{ left: -12, right: 8, top: 8 }}>
                 <defs>
                   <linearGradient id="rev" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="var(--color-chart-1)" stopOpacity={0.35} />
@@ -140,74 +212,134 @@ function ReportsPage() {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                 <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} stroke="var(--color-muted-foreground)" />
-                <YAxis tickFormatter={(v: number) => compact(v)} tickLine={false} axisLine={false} fontSize={11} stroke="var(--color-muted-foreground)" />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => currency(v, 0)} />
+                <YAxis tickFormatter={(v: number) => formatNprCompact(v)} tickLine={false} axisLine={false} fontSize={11} stroke="var(--color-muted-foreground)" />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatNpr(v)} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Area type="monotone" dataKey="revenue" name="Revenue" stroke="var(--color-chart-1)" fill="url(#rev)" strokeWidth={2} />
                 <Line type="monotone" dataKey="profit" name="Profit" stroke="var(--color-chart-2)" strokeWidth={2} dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
+          )}
         </Section>
 
         <Section title="Payment methods" description="Share of settled transactions">
+          {paymentSplit.isLoading ? (
+            <ChartSkeleton />
+          ) : paymentSplit.isError ? (
+            <SectionError error={paymentSplit.error} />
+          ) : (paymentSplit.data ?? []).length === 0 ? (
+            <EmptyState title="No payments yet" description="Payment share appears once orders are paid." />
+          ) : (
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={paymentSplit} dataKey="value" nameKey="name" innerRadius={58} outerRadius={92} paddingAngle={2} stroke="none">
-                  {paymentSplit.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
+                <Pie data={paymentSplit.data ?? []} dataKey="value" nameKey="method" innerRadius={58} outerRadius={92} paddingAngle={2} stroke="none">
+                  {(paymentSplit.data ?? []).map((entry, i) => <Cell key={entry.method} fill={pieColors[i % pieColors.length]} />)}
                 </Pie>
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `${v}%`} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatNpr(v)} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
+          )}
         </Section>
 
         <Section title="Sales by category" description="Revenue contribution per catalog category">
+          {categorySales.isLoading ? (
+            <ChartSkeleton />
+          ) : categorySales.isError ? (
+            <SectionError error={categorySales.error} />
+          ) : (categorySales.data ?? []).length === 0 ? (
+            <EmptyState title="No category sales yet" description="Paid orders will populate this breakdown." />
+          ) : (
           <div className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={categorySales} margin={{ left: -12, right: 8 }}>
+              <BarChart data={categorySales.data ?? []} margin={{ left: -12, right: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={10} stroke="var(--color-muted-foreground)" interval={0} angle={-15} textAnchor="end" height={50} />
-                <YAxis tickFormatter={(v: number) => compact(v)} tickLine={false} axisLine={false} fontSize={11} stroke="var(--color-muted-foreground)" />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => currency(v, 0)} cursor={{ fill: "var(--color-surface-muted)" }} />
+                <XAxis dataKey="category" tickLine={false} axisLine={false} fontSize={10} stroke="var(--color-muted-foreground)" interval={0} angle={-15} textAnchor="end" height={50} />
+                <YAxis tickFormatter={(v: number) => formatNprCompact(v)} tickLine={false} axisLine={false} fontSize={11} stroke="var(--color-muted-foreground)" />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatNpr(v)} cursor={{ fill: "var(--color-surface-muted)" }} />
                 <Bar dataKey="value" name="Revenue" fill="var(--color-chart-1)" radius={[4, 4, 0, 0]} barSize={28} />
               </BarChart>
             </ResponsiveContainer>
           </div>
+          )}
         </Section>
 
-        <Section title="Order trend" description="Order volume over the period">
+        <Section title="Order trend" description="Paid order volume over the period">
+          {revenue.isLoading ? (
+            <ChartSkeleton />
+          ) : revenue.isError ? (
+            <SectionError error={revenue.error} />
+          ) : revenuePoints.length === 0 ? (
+            <EmptyState title="No orders in this range" description="Paid orders within the selected dates will populate this chart." />
+          ) : (
           <div className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={revenueSeries} margin={{ left: -12, right: 8 }}>
+              <LineChart data={revenuePoints} margin={{ left: -12, right: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                 <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} stroke="var(--color-muted-foreground)" />
-                <YAxis tickFormatter={(v: number) => compact(v)} tickLine={false} axisLine={false} fontSize={11} stroke="var(--color-muted-foreground)" />
+                <YAxis tickFormatter={(v: number) => formatNprCompact(v)} tickLine={false} axisLine={false} fontSize={11} stroke="var(--color-muted-foreground)" />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Line type="monotone" dataKey="orders" name="Orders" stroke="var(--color-chart-3)" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
+          )}
         </Section>
 
-        <Section title="Regional breakdown" bodyClassName="p-0">
+        <Section title="Regional breakdown" description="Settled revenue per region" bodyClassName="p-0">
+          {regionSales.isLoading ? (
+            <div className="p-4"><ChartSkeleton height={180} /></div>
+          ) : regionSales.isError ? (
+            <SectionError error={regionSales.error} />
+          ) : (regionSales.data ?? []).length === 0 ? (
+            <div className="p-4"><EmptyState title="No regional sales yet" description="Paid orders will populate this breakdown." /></div>
+          ) : (
           <ul className="divide-y">
-            {regionSales.map((r) => (
-              <li key={r.name} className="px-4 py-3">
+            {(regionSales.data ?? []).map((r) => (
+              <li key={r.region} className="px-4 py-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="truncate">{r.name}</span>
-                  <span className="num font-medium">{currency(r.value, 0)}</span>
+                  <span className="truncate">{r.region}</span>
+                  <span className="num font-medium">{formatNpr(r.value)}</span>
                 </div>
                 <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-muted">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${r.share * 2}%` }} />
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (r.value / regionTotal) * 100)}%` }} />
                 </div>
               </li>
             ))}
           </ul>
+          )}
         </Section>
+
+        {report === "products" && (
+          <Section className="xl:col-span-3" title="Top products" description="Ranked by settled revenue in the selected range">
+            {topProducts.isLoading ? (
+              <ChartSkeleton />
+            ) : topProducts.isError ? (
+              <SectionError error={topProducts.error} />
+            ) : (topProducts.data ?? []).length === 0 ? (
+              <EmptyState title="No product sales yet" description="Paid orders will populate this ranking." />
+            ) : (
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={topProducts.data ?? []} margin={{ left: -12, right: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                  <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={10} stroke="var(--color-muted-foreground)" interval={0} angle={-15} textAnchor="end" height={60} />
+                  <YAxis tickFormatter={(v: number) => formatNprCompact(v)} tickLine={false} axisLine={false} fontSize={11} stroke="var(--color-muted-foreground)" />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number, name) => (name === "Units sold" ? String(v) : formatNpr(v))} cursor={{ fill: "var(--color-surface-muted)" }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="revenue" name="Revenue" fill="var(--color-chart-1)" radius={[4, 4, 0, 0]} barSize={28} />
+                  <Bar dataKey="unitsSold" name="Units sold" fill="var(--color-chart-3)" radius={[4, 4, 0, 0]} barSize={28} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            )}
+          </Section>
+        )}
       </div>
+      </ReportsPermissionGate>
     </AppShell>
   );
 }

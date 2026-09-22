@@ -15,10 +15,24 @@ dist-ssr
 .tanstack/**
 .nitro
 *.local
+coverage
+test-results
+playwright-report
+*.tsbuildinfo
+
+# Environment — never commit credentials
+.env
+.env.*
+!.env.example
 
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
+
+# Local mkcert certificates (private keys — never commit)
+live-lab/certs/
+*.pem
+*.key
 
 # Editor directories and files
 .vscode/*
@@ -30,3 +44,65 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.qodo/
+
+# ---------------------------------------------------------------------------
+# Release hygiene — diagnostic/build/test output and scratch tooling.
+# Patterns apply repo-wide (any depth) except where a leading "/" scopes them.
+# ---------------------------------------------------------------------------
+# Diagnostic and build output
+*.txt
+!public/robots.txt
+*.out
+*.err
+*.zip
+tmp/
+
+# Generated HTML captures / API response probes
+/*.html
+/api-*.json
+/probe-body.json
+/prod.json
+/prod2.json
+
+# One-off probe / patch / helper scripts (root level)
+/probe-*
+/patch-*
+/_*
+/*.bat
+/ls_*.ps1
+/served-productcard.ts
+
+# Storefront root-level probes/captures (legit config + src are unaffected)
+/storefront/*.html
+/storefront/api-*.json
+/storefront/probe-*
+/storefront/peek.cjs
+/storefront/scan-*
+/storefront/served-*
+/storefront/hydration-check.mjs
+/storefront/browser-runner.mjs
+/storefront/live-browser-payment-test.mjs
+
+# Backend root-level one-off scratch scripts (backend/scripts/** stays)
+/backend/probe*.mts
+/backend/fix_indent.js
+/backend/_*
+
+# Storefront root-level scratch helpers (underscore-prefixed, stray outputs)
+/storefront/_*
+/storefront/result.json
+
+# ---------------------------------------------------------------------------
+# live-lab — keep ONLY the intentional runtime/test tooling.
+# Everything else (diagnostic outputs, screenshots, patch/probe scripts,
+# scratch dumps, SDK captures, certs) is ignored.
+# ---------------------------------------------------------------------------
+live-lab/*
+!live-lab/README.md
+!live-lab/start-https-lab.mjs
+!live-lab/stop-lab.mjs
+!live-lab/ensure-storefront.mjs
+!live-lab/https-proxy.mjs
+!live-lab/browser-payment-test.mjs

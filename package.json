@@ -9,7 +9,9 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "lab": "node live-lab/start-https-lab.mjs --with-storefront",
+    "lab:stop": "node live-lab/stop-lab.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -82,5 +84,8 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.2.0"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -1,0 +1,298 @@
+@import "tailwindcss";
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * ============================================================================
+ * NASB — QUALITY WITHOUT COMPROMISE.
+ * Storefront design system for Neupane Aakosh Samik Brothers Pvt. Ltd.
+ *
+ * Brand character: heritage · craftsmanship · authentic · human-made · Nepalese
+ * · strong · elegant · minimal · confident · premium.
+ *
+ * This is the SINGLE SOURCE OF TRUTH for the NASB visual language. Every UI
+ * primitive in the storefront consumes the semantic tokens below (--background,
+ * --foreground, --primary, --accent, ...) plus the brand utilities/typography
+ * defined further down. Editing this file re-brands the entire storefront.
+ * ============================================================================
+ */
+
+/* ---------------------------------------------------------------------------
+ * Brand palette (plain theme tokens — usable directly as `bg-ink`, `text-gold`,
+ * `border-border-line`, etc.).
+ * ------------------------------------------------------------------------- */
+@theme {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Playfair Display", "Cormorant Garamond", Georgia, "Times New Roman", serif;
+
+  /* Core NASB surfaces */
+  --color-ink: #0b0b0b; /* Primary Black */
+  --color-charcoal: #181818;
+  --color-ivory: #f4f0e8; /* Antique Ivory */
+  --color-cream: #faf8f3; /* Soft Cream */
+  --color-ink-text: #111111; /* Primary Text */
+  --color-muted-text: #666360; /* Secondary Text (AA on light surfaces) */
+  --color-border-line: #d8d2c7; /* Border */
+/* Phase 18 (G18-01): `--color-gold` (#b08d57) is a DECORATIVE/brand accent.
+ * On light (ivory) surfaces it fails WCAG AA for text (~2.7:1). Meaningful text
+ * on light surfaces must use `--color-dark-gold` (#806538 → 4.8:1 on ivory,
+ * 5.4:1 with white text). On dark (ink) surfaces `--color-gold` is still the
+ * correct text accent (~6:1). */
+  --color-gold: #b08d57; /* Antique Gold Accent (decorative / dark-surface text) */
+  --color-dark-gold: #806538; /* Dark Gold (AA-compliant text on light surfaces) */
+
+  --color-white: #ffffff;
+}
+
+/*
+ * Semantic token mapping — every shadcn-style primitive (button, card, input,
+ * badge, dialog, table, alert, skeleton, ...) resolves against these CSS
+ * variables, so a single change here restyles every page consistently.
+ */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 6px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Warm, low-contrast editorial shadows (craftsmanship, not tech). */
+  --shadow-card: 0 1px 2px 0 rgb(17 17 17 / 0.04);
+  --shadow-raised: 0 1px 3px 0 rgb(17 17 17 / 0.06), 0 1px 2px -1px rgb(17 17 17 / 0.05);
+  --shadow-overlay: 0 18px 44px -18px rgb(17 17 17 / 0.28), 0 2px 12px -2px rgb(17 17 17 / 0.1);
+}
+
+/* Light theme — the default NASB surface (≈60% ivory/cream, 25% black, 5% gold). */
+:root {
+  --radius: 0.375rem; /* subtle, editorial — never pill-shaped by default */
+  --background: #f4f0e8; /* Antique Ivory */
+  --foreground: #111111;
+  --card: #faf8f3; /* Soft Cream */
+  --card-foreground: #111111;
+  --popover: #faf8f3;
+  --popover-foreground: #111111;
+  --primary: #0b0b0b; /* Primary Black */
+  --primary-foreground: #ffffff;
+  --secondary: #eae4d7; /* deep ivory */
+  --secondary-foreground: #111111;
+  --muted: #ece6da; /* light ivory */
+  --muted-foreground: #666360; /* Secondary Text (4.8:1 on muted bg) */
+  --accent: #b08d57; /* Antique Gold */
+  --accent-foreground: #ffffff;
+  --destructive: #b03a2a;
+  --destructive-foreground: #ffffff;
+  --success: #4f7a56;
+  --success-foreground: #ffffff; /* 4.9:1 on the sage green */
+  --border: #d8d2c7;
+  --input: #cfc8ba;
+  --ring: #b08d57;
+}
+
+/* Dark surface — used selectively (e.g. footer, hero overlays) as a brand
+ * statement rather than a site-wide default. Matches the black/ivory identity. */
+.dark {
+  --background: #181818;
+  --foreground: #f4f0e8;
+  --card: #1f1d1a;
+  --card-foreground: #f4f0e8;
+  --popover: #1f1d1a;
+  --popover-foreground: #f4f0e8;
+  --primary: #f4f0e8;
+  --primary-foreground: #0b0b0b;
+  --secondary: #26231f;
+  --secondary-foreground: #f4f0e8;
+  --muted: #211f1c;
+  --muted-foreground: #b6ad9d;
+  --accent: #b08d57;
+  --accent-foreground: #ffffff;
+  --destructive: #d16053;
+  --destructive-foreground: #0b0b0b;
+  --success: #7aa083;
+  --success-foreground: #0b0b0b; /* ≈6.8:1 on the light sage */
+  --border: #3a362e;
+  --input: #4a453c;
+  --ring: #b08d57;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+    /* Offset anchored scroll targets below the sticky header. */
+    scroll-padding-top: 5.5rem;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+    ::selection {
+    background-color: var(--color-gold);
+    color: #ffffff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* -------------------------------------------------------------------------
+ * Brand typography & editorial utilities
+ * ------------------------------------------------------------------------- */
+
+/* Large editorial display heading — serif, confident, heritage. */
+@utility display-heading {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+  color: var(--color-ink-text);
+}
+
+/* Small uppercase sans label — the editorial "eyebrow". */
+@utility eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-dark-gold);
+}
+
+/* Keep legacy utility names working across the storefront. */
+@utility text-display {
+  font-family: var(--font-serif);
+  font-size: clamp(1.875rem, 4vw, 3rem);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+@utility num {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility card-surface {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* A thin horizontal rule with an antique-gold accent terminal — used under
+ * section indices and editorial headings. */
+@utility gold-rule {
+  height: 1px;
+  background: linear-gradient(to right, var(--color-gold), var(--color-border-line));
+}
+
+/* Sectioned editorial number, e.g. "01". */
+@utility section-index {
+  font-family: var(--font-serif);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--color-dark-gold);
+}
+
+/* -------------------------------------------------------------------------
+ * Micro-interactions — subtle, craftsmanship-flavoured. Honoured by the
+ * global prefers-reduced-motion rule further below.
+ * ------------------------------------------------------------------------- */
+@keyframes NASB-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes NASB-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes NASB-zoom {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@utility animate-fade-up {
+  animation: NASB-fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility animate-fade-in {
+  animation: NASB-fade-in 1s ease-out both;
+}
+
+@utility animate-hero-zoom {
+  animation: NASB-zoom 1.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Sticky-page-edge section markers. */
+@utility edge-num {
+  color: var(--color-dark-gold);
+}
+
+/* ----- Reduced motion (WCAG 2.3.3) -----
+ * Honors the OS-level "reduce motion" preference. Transitions/animations become
+ * near-instant so decorative motion is disabled while layout, focus visibility,
+ * dialog functionality and loading/status indicators that render their state
+ * are preserved. This is the standard WCAG-conformant pattern for Radix,
+ * tw-animate-css and utility animations.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

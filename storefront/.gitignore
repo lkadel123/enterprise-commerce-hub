@@ -1,0 +1,32 @@
+# Storefront build output
+.output/
+.nitro/
+.vite/
+node_modules/
+coverage/
+test-results/
+playwright-report/
+*.tsbuildinfo
+
+# Environment — never commit credentials (.env.example stays)
+.env
+!.env.example
+
+# Generated router files
+src/routeTree.gen.ts
+src/.server/
+src/.client/test-results/
+
+# Root-level probe scripts / captures / scratch outputs
+/probe-*
+/peek.cjs
+/scan-*
+/served-*
+/hydration-check.mjs
+/browser-runner.mjs
+/live-browser-payment-test.mjs
+*.txt
+*.log
+*.out
+*.err
+*.html

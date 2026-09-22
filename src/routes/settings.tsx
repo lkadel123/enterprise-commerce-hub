@@ -51,7 +51,7 @@ function SettingsPage() {
       <PageHeader
         title="Settings"
         description="Store configuration, commerce policies and platform security."
-        actions={<Button size="sm" className="h-9" onClick={() => toast.success("Settings saved")}>Save changes</Button>}
+        actions={<Button size="sm" className="h-9" onClick={() => toast.info("Settings persistence is not yet available in this build")}>Save changes</Button>}
       />
 
       <Tabs defaultValue="store">
@@ -97,9 +97,25 @@ function SettingsPage() {
         <TabsContent value="payments" className="m-0">
           <Section title="Payment gateways" description="Enabled providers and settlement behaviour.">
             <div className="divide-y">
-              {["Stripe", "PayPal", "Adyen", "Cash on delivery"].map((p, i) => (
-                <Row key={p} label={p} hint={i === 3 ? "Available for selected regions only" : "Card and wallet processing"}>
-                  <Switch defaultChecked={i < 2} />
+              {[
+                {
+                  name: "Cybersource (Unified Checkout)",
+                  hint: "Card payments — server-created capture context, server-side settlement",
+                  enabled: true,
+                },
+                {
+                  name: "Fonepay QR",
+                  hint: "QR / Intent Checkout — display-only QR, Status-API settlement",
+                  enabled: true,
+                },
+                {
+                  name: "Cash on delivery",
+                  hint: "Available for selected regions only",
+                  enabled: false,
+                },
+              ].map((g) => (
+                <Row key={g.name} label={g.name} hint={g.hint}>
+                  <Switch defaultChecked={g.enabled} />
                 </Row>
               ))}
               <Row label="Auto-capture payments" hint="Capture funds immediately on authorization"><Switch defaultChecked /></Row>
@@ -147,7 +163,7 @@ function SettingsPage() {
               <Row label="Password rotation" hint="Force reset every 90 days"><Switch defaultChecked /></Row>
             </div>
             <Separator className="my-4" />
-            <Button variant="outline" size="sm" className="h-9" onClick={() => toast.success("All other sessions revoked")}>
+            <Button variant="outline" size="sm" className="h-9" onClick={() => toast.info("Session revocation is not yet available in this build")}>
               Revoke all other sessions
             </Button>
           </Section>

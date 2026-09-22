@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
+  Activity as ActivityIcon,
   Bell,
   CircleHelp,
   LogOut,
@@ -11,9 +12,8 @@ import {
   ShieldCheck,
   Sun,
   User,
-  Activity as ActivityIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -39,7 +39,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { notifications } from "@/lib/mock-data";
+import { useAdminAuth } from "@/lib/auth/AdminAuthContext";
 
 const labels: Record<string, string> = {
   "": "Dashboard",
@@ -78,10 +78,21 @@ function useTheme() {
 }
 
 export function Topbar() {
+  const { status, user, logout } = useAdminAuth();
+  const isAuthenticated = status === "authenticated";
+  const isLoading = status === "restoring";
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { dark, toggle } = useTheme();
   const segments = pathname.split("/").filter(Boolean);
   const title = labels[segments[segments.length - 1] ?? ""] ?? segments[segments.length - 1] ?? "Dashboard";
+
+  // Guest/user initials for avatar
+  const initials = user?.name
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() ?? "??";
 
   return (
     <header className="sticky top-0 z-30 border-b bg-surface/85 backdrop-blur supports-[backdrop-filter]:bg-surface/70">
@@ -146,33 +157,18 @@ export function Topbar() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative h-9 w-9">
                 <Bell className="h-4.5 w-4.5" />
-                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-surface" />
+                {isAuthenticated && <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-surface" />}
                 <span className="sr-only">Notifications</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-88 p-0">
               <div className="flex items-center justify-between border-b px-3 py-2.5">
                 <p className="text-sm font-semibold">Notifications</p>
-                <Badge variant="secondary">{notifications.length} new</Badge>
-              </div>
-              <div className="max-h-88 overflow-y-auto">
-                {notifications.map((n) => (
-                  <div
-                    key={n.title}
-                    className="flex gap-3 border-b px-3 py-2.5 last:border-0 hover:bg-surface-muted"
-                  >
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{n.title}</p>
-                      <p className="truncate text-xs text-muted-foreground">{n.body}</p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">{n.time}</p>
-                    </div>
-                  </div>
-                ))}
+                <Badge variant="secondary">—</Badge>
               </div>
               <div className="p-2">
-                <Button variant="outline" size="sm" className="w-full">
-                  View all notifications
+                <Button variant="outline" size="sm" className="w-full" disabled>
+                  Notification feed unavailable
                 </Button>
               </div>
             </DropdownMenuContent>
@@ -213,20 +209,20 @@ export function Topbar() {
               <button className="ml-1 flex items-center gap-2 rounded-md p-1 pr-2 transition-colors hover:bg-surface-muted">
                 <Avatar className="h-7 w-7">
                   <AvatarFallback className="bg-primary text-xs text-primary-foreground">
-                    AW
+                    {initials}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden text-left lg:block">
-                  <p className="text-xs font-medium">Amelia Whitfield</p>
-                  <p className="text-[11px] text-muted-foreground">Super Admin</p>
+                  <p className="text-xs font-medium truncate max-w-[140px]">{user?.name ?? "Admin"}</p>
+                  {user?.role && <p className="text-[11px] text-muted-foreground">{user.role}</p>}
                 </div>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
-                <p className="text-sm font-medium">Amelia Whitfield</p>
+                <p className="text-sm font-medium">{user?.name ?? "Admin"}</p>
                 <p className="text-xs font-normal text-muted-foreground">
-                  amelia.w@northpeak.com
+                  {user?.email ?? ""}
                 </p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -248,9 +244,15 @@ export function Topbar() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild className="text-destructive focus:text-destructive">
-                <Link to="/login">
+                <button
+                  onClick={() => {
+                    logout();
+                    toast.success("Signed out");
+                  }}
+                  className="flex w-full items-center gap-2"
+                >
                   <LogOut className="h-4 w-4" /> Log out
-                </Link>
+                </button>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

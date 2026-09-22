@@ -71,11 +71,13 @@ export function StatCard({
 }: {
   label: string;
   value: string;
-  delta: number;
-  note: string;
+  /** Period-over-period change in % — omitted when the backend provides no
+   * comparison data (no fabricated deltas). */
+  delta?: number;
+  note?: string;
   spark?: number[];
 }) {
-  const positive = delta >= 0;
+  const positive = (delta ?? 0) >= 0;
   return (
     <div className="card-surface p-4 transition-shadow hover:shadow-raised">
       <p className="text-label">{label}</p>
@@ -108,23 +110,25 @@ export function StatCard({
         )}
       </div>
       <div className="mt-2.5 flex items-center gap-2">
-        <span
-          className={cn(
-            "num inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-medium",
-            positive
-              ? "bg-success/10 text-success"
-              : "bg-destructive/10 text-destructive",
-          )}
-        >
-          {positive ? (
-            <ArrowUpRight className="h-3.5 w-3.5" />
-          ) : (
-            <ArrowDownRight className="h-3.5 w-3.5" />
-          )}
-          {positive ? "+" : ""}
-          {delta}%
-        </span>
-        <span className="truncate text-xs text-muted-foreground">{note}</span>
+        {delta !== undefined && (
+          <span
+            className={cn(
+              "num inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-medium",
+              positive
+                ? "bg-success/10 text-success"
+                : "bg-destructive/10 text-destructive",
+            )}
+          >
+            {positive ? (
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            ) : (
+              <ArrowDownRight className="h-3.5 w-3.5" />
+            )}
+            {positive ? "+" : ""}
+            {delta}%
+          </span>
+        )}
+        {note && <span className="truncate text-xs text-muted-foreground">{note}</span>}
       </div>
     </div>
   );

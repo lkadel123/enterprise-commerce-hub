@@ -11,11 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActivityRouteImport } from './routes/activity'
+import { Route as BannersRouteImport } from './routes/banners'
 import { Route as BrandsRouteImport } from './routes/brands'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as CouponsRouteImport } from './routes/coupons'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MediaRouteImport } from './routes/media'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -35,6 +37,11 @@ const IndexRoute = IndexRouteImport.update({
 const ActivityRoute = ActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BannersRoute = BannersRouteImport.update({
+  id: '/banners',
+  path: '/banners',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrandsRoute = BrandsRouteImport.update({
@@ -60,6 +67,11 @@ const InventoryRoute = InventoryRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MediaRoute = MediaRouteImport.update({
+  id: '/media',
+  path: '/media',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -116,11 +128,13 @@ const ProductsNewRoute = ProductsNewRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
+  '/banners': typeof BannersRoute
   '/brands': typeof BrandsRoute
   '/categories': typeof CategoriesRoute
   '/coupons': typeof CouponsRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
+  '/media': typeof MediaRoute
   '/reports': typeof ReportsRoute
   '/reviews': typeof ReviewsRoute
   '/settings': typeof SettingsRoute
@@ -135,11 +149,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
+  '/banners': typeof BannersRoute
   '/brands': typeof BrandsRoute
   '/categories': typeof CategoriesRoute
   '/coupons': typeof CouponsRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
+  '/media': typeof MediaRoute
   '/reports': typeof ReportsRoute
   '/reviews': typeof ReviewsRoute
   '/settings': typeof SettingsRoute
@@ -155,11 +171,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
+  '/banners': typeof BannersRoute
   '/brands': typeof BrandsRoute
   '/categories': typeof CategoriesRoute
   '/coupons': typeof CouponsRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
+  '/media': typeof MediaRoute
   '/reports': typeof ReportsRoute
   '/reviews': typeof ReviewsRoute
   '/settings': typeof SettingsRoute
@@ -176,11 +194,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/activity'
+    | '/banners'
     | '/brands'
     | '/categories'
     | '/coupons'
     | '/inventory'
     | '/login'
+    | '/media'
     | '/reports'
     | '/reviews'
     | '/settings'
@@ -195,11 +215,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/activity'
+    | '/banners'
     | '/brands'
     | '/categories'
     | '/coupons'
     | '/inventory'
     | '/login'
+    | '/media'
     | '/reports'
     | '/reviews'
     | '/settings'
@@ -214,11 +236,13 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/activity'
+    | '/banners'
     | '/brands'
     | '/categories'
     | '/coupons'
     | '/inventory'
     | '/login'
+    | '/media'
     | '/reports'
     | '/reviews'
     | '/settings'
@@ -234,11 +258,13 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivityRoute: typeof ActivityRoute
+  BannersRoute: typeof BannersRoute
   BrandsRoute: typeof BrandsRoute
   CategoriesRoute: typeof CategoriesRoute
   CouponsRoute: typeof CouponsRoute
   InventoryRoute: typeof InventoryRoute
   LoginRoute: typeof LoginRoute
+  MediaRoute: typeof MediaRoute
   ReportsRoute: typeof ReportsRoute
   ReviewsRoute: typeof ReviewsRoute
   SettingsRoute: typeof SettingsRoute
@@ -265,6 +291,13 @@ declare module '@tanstack/react-router' {
       path: '/activity'
       fullPath: '/activity'
       preLoaderRoute: typeof ActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/banners': {
+      id: '/banners'
+      path: '/banners'
+      fullPath: '/banners'
+      preLoaderRoute: typeof BannersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/brands': {
@@ -300,6 +333,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/media': {
+      id: '/media'
+      path: '/media'
+      fullPath: '/media'
+      preLoaderRoute: typeof MediaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -378,11 +418,13 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivityRoute: ActivityRoute,
+  BannersRoute: BannersRoute,
   BrandsRoute: BrandsRoute,
   CategoriesRoute: CategoriesRoute,
   CouponsRoute: CouponsRoute,
   InventoryRoute: InventoryRoute,
   LoginRoute: LoginRoute,
+  MediaRoute: MediaRoute,
   ReportsRoute: ReportsRoute,
   ReviewsRoute: ReviewsRoute,
   SettingsRoute: SettingsRoute,

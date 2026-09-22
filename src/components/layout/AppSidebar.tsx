@@ -1,15 +1,11 @@
 import {
-  Activity,
   BadgePercent,
   BarChart3,
   Boxes,
   ChevronRight,
-  CreditCard,
-  FileText,
   Image,
+  Images,
   LayoutDashboard,
-  MessageSquareText,
-  Megaphone,
   Package,
   Settings,
   ShieldCheck,
@@ -21,7 +17,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   Collapsible,
@@ -37,7 +33,6 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
@@ -45,13 +40,16 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useAdminAuth } from "@/lib/auth/AdminAuthContext";
+import type { PermissionModule } from "@/lib/api/types";
 
-type NavChild = { title: string; url: string; badge?: string };
+type NavChild = { title: string; url: string };
 type NavItem = {
   title: string;
   url: string;
   icon: LucideIcon;
-  badge?: string;
+  /** Backend RBAC module guarding this page (view action). */
+  module?: PermissionModule;
   children?: NavChild[];
 };
 type NavGroup = { label: string; items: NavItem[] };
@@ -68,16 +66,15 @@ const navigation: NavGroup[] = [
         title: "Products",
         url: "/products",
         icon: Package,
+        module: "catalog",
         children: [
           { title: "All Products", url: "/products" },
           { title: "Add Product", url: "/products/new" },
-          { title: "Attributes", url: "/products" },
-          { title: "Collections", url: "/products" },
         ],
       },
-      { title: "Categories", url: "/categories", icon: Tags },
-      { title: "Brands", url: "/brands", icon: Boxes },
-      { title: "Inventory", url: "/inventory", icon: Warehouse, badge: "7" },
+      { title: "Categories", url: "/categories", icon: Tags, module: "catalog" },
+      { title: "Brands", url: "/brands", icon: Boxes, module: "catalog" },
+      { title: "Inventory", url: "/inventory", icon: Warehouse, module: "inventory" },
     ],
   },
   {
@@ -87,10 +84,10 @@ const navigation: NavGroup[] = [
         title: "Orders",
         url: "/orders",
         icon: ShoppingCart,
-        badge: "24",
+        module: "orders",
         children: [
           { title: "All Orders", url: "/orders" },
-          { title: "Pending", url: "/orders", badge: "9" },
+          { title: "Pending", url: "/orders" },
           { title: "Processing", url: "/orders" },
           { title: "Shipped", url: "/orders" },
           { title: "Delivered", url: "/orders" },
@@ -98,46 +95,29 @@ const navigation: NavGroup[] = [
           { title: "Returns & Refunds", url: "/orders" },
         ],
       },
-      { title: "Transactions", url: "/reports", icon: CreditCard },
-      { title: "Sales Analytics", url: "/reports", icon: BarChart3 },
+      { title: "Reports", url: "/reports", icon: BarChart3, module: "reports" },
     ],
   },
   {
     label: "Customers",
     items: [
-      {
-        title: "Customers",
-        url: "/customers",
-        icon: Users,
-        children: [
-          { title: "All Customers", url: "/customers" },
-          { title: "Customer Groups", url: "/customers" },
-        ],
-      },
-      { title: "Reviews", url: "/reviews", icon: Star, badge: "2" },
+      { title: "Customers", url: "/customers", icon: Users, module: "customers" },
+      { title: "Reviews", url: "/reviews", icon: Star, module: "catalog" },
     ],
   },
   {
     label: "Marketing",
     items: [
-      { title: "Coupons", url: "/coupons", icon: BadgePercent },
-      { title: "Campaigns", url: "/coupons", icon: Megaphone },
-      { title: "Banners & Media", url: "/coupons", icon: Image },
-    ],
-  },
-  {
-    label: "Insights",
-    items: [
-      { title: "Reports", url: "/reports", icon: FileText },
-      { title: "Activity Logs", url: "/activity", icon: Activity },
+      { title: "Coupons", url: "/coupons", icon: BadgePercent, module: "marketing" },
+      { title: "Banners", url: "/banners", icon: Image, module: "marketing" },
+      { title: "Media Library", url: "/media", icon: Images, module: "marketing" },
     ],
   },
   {
     label: "Administration",
     items: [
-      { title: "Users & Roles", url: "/users", icon: ShieldCheck },
-      { title: "Content Pages", url: "/settings", icon: MessageSquareText },
-      { title: "Settings", url: "/settings", icon: Settings },
+      { title: "Users & Roles", url: "/users", icon: ShieldCheck, module: "administration" },
+      { title: "Settings", url: "/settings", icon: Settings, module: "settings" },
     ],
   },
 ];
@@ -147,9 +127,26 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const { hasPermission } = useAdminAuth();
 
   const isActive = (url: string) =>
     url === "/" ? pathname === "/" : pathname.startsWith(url);
+
+  // Permission-aware navigation: items whose backend module the signed-in
+  // admin cannot view are hidden (the backend independently enforces RBAC on
+  // every request; this only shapes the UI).
+  const visibleGroups = useMemo(
+    () =>
+      navigation
+        .map((group) => ({
+          ...group,
+          items: group.items.filter(
+            (item) => !item.module || hasPermission(item.module, "view"),
+          ),
+        }))
+        .filter((group) => group.items.length > 0),
+    [hasPermission],
+  );
 
   return (
     <Sidebar collapsible="icon" className="border-r">
@@ -168,7 +165,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="gap-0">
-        {navigation.map((group) => (
+        {visibleGroups.map((group) => (
           <SidebarGroup key={group.label} className="py-1.5">
             <SidebarGroupLabel className="text-[11px] font-medium tracking-wide uppercase text-muted-foreground/80">
               {group.label}
@@ -186,9 +183,6 @@ export function AppSidebar() {
                             <span>{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
-                        {item.badge && !collapsed && (
-                          <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>
-                        )}
                       </SidebarMenuItem>
                     );
                   }
@@ -234,17 +228,7 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border">
-        {!collapsed ? (
-          <div className="rounded-md bg-sidebar-accent p-3">
-            <p className="text-xs font-medium">Storage plan</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">68% of 500 GB used</p>
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-border">
-              <div className="h-full w-[68%] rounded-full bg-primary" />
-            </div>
-          </div>
-        ) : null}
-      </SidebarFooter>
+      <SidebarFooter className="border-t border-sidebar-border" />
     </Sidebar>
   );
 }

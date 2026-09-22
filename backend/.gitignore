@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+uploads/
+.output/
+coverage/
+test-results/
+*.tsbuildinfo
+
+# Environment — never commit credentials
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs / diagnostic output
+logs/
+*.log
+*.txt
+*.out
+*.err
+npm-debug.log*
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

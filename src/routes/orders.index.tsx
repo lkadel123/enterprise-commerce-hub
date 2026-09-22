@@ -2,21 +2,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Download,
   Eye,
-  Filter,
   MoreHorizontal,
-  Printer,
   RefreshCcw,
-  Search,
-  SlidersHorizontal,
   XCircle,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader, Section, StatusBadge, TablePagination, EmptyState } from "@/components/kit";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,21 +27,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { currency, orders } from "@/lib/mock-data";
+import { AdminApiError } from "@/lib/api/client";
+import { ordersApi } from "@/lib/api/commerce";
+import type { OrderDto } from "@/lib/api/types";
+import { formatNpr } from "@/lib/utils";
 
 export const Route = createFileRoute("/orders/")({
   head: () => ({
     meta: [
-      { title: "Orders — Northpeak Commerce Console" },
+      { title: "Orders - Northpeak Commerce Console" },
       {
         name: "description",
-        content:
-          "Search, filter and fulfil customer orders with bulk actions, payment status and refund workflows.",
-      },
-      { property: "og:title", content: "Orders — Northpeak Commerce Console" },
-      {
-        property: "og:description",
-        content: "Enterprise order management with filtering, bulk actions and refunds.",
+        content: "Search, filter and fulfil customer orders with payment status and refund workflows.",
       },
     ],
   }),
@@ -55,192 +47,209 @@ export const Route = createFileRoute("/orders/")({
 
 const PAGE_SIZE = 10;
 
+function ordersToCsv(rows: OrderDto[]): string {
+  const header = ["Order", "Customer", "Email", "Items", "Total", "Status", "Payment status", "Created"];
+  const lines = rows.map((o) =>
+    [
+      o.orderNumber,
+      o.customer?.name ?? "Guest",
+      o.email,
+      o.items.reduce((n, it) => n + it.qty, 0),
+      o.amounts.total,
+      o.status,
+      o.payment.status,
+      o.createdAt,
+    ]
+      .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+      .join(","),
+  );
+  return [header.join(","), ...lines].join("\n");
+}
+
 function OrdersPage() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [payment, setPayment] = useState("all");
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<string[]>([]);
 
-  const filtered = useMemo(
-    () =>
-      orders.filter((o) => {
-        const q = query.trim().toLowerCase();
-        const matchQ =
-          !q ||
-          o.id.toLowerCase().includes(q) ||
-          o.customer.toLowerCase().includes(q) ||
-          o.product.toLowerCase().includes(q);
-        const matchS = status === "all" || o.status === status;
-        const matchP = payment === "all" || o.payment === payment;
-        return matchQ && matchS && matchP;
-      }),
-    [query, status, payment],
-  );
+  const params = {
+    ...(query.trim() ? { q: query.trim() } : {}),
+    ...(status !== "all" ? { status } : {}),
+    ...(payment !== "all" ? { payment } : {}),
+    page,
+    pageSize: PAGE_SIZE,
+  };
+  const ordersQuery = ordersApi.useList(params);
+  const cancel = ordersApi.useCancel();
+  const refund = ordersApi.useRefund();
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const current = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const allChecked = current.length > 0 && current.every((o) => selected.includes(o.id));
+  const rows = ordersQuery.data?.data ?? [];
+  const meta = ordersQuery.data?.meta;
+  const total = meta?.total ?? 0;
+  const pageCount = meta?.totalPages ?? 1;
+
+  const act = (fn: () => Promise<unknown>, success: string) => {
+    fn()
+      .then(() => toast.success(success))
+      .catch((e: unknown) => toast.error(e instanceof AdminApiError ? e.message : "Action failed"));
+  };
+
+  const exportCsv = () => {
+    if (rows.length === 0) {
+      toast.info("No orders on this page to export");
+      return;
+    }
+    const csv = ordersToCsv(rows);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `orders-page-${page}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV downloaded for the current page");
+  };
 
   return (
     <AppShell>
       <PageHeader
         title="Orders"
-        description={`${filtered.length} orders matching current filters`}
+        description={`${total} orders matching current filters`}
         actions={
-          <>
-            <Button variant="outline" size="sm" className="h-9" onClick={() => toast.success("Export queued — CSV will be emailed")}>
-              <Download className="h-4 w-4" /> Export
-            </Button>
-            <Button size="sm" className="h-9">Create order</Button>
-          </>
+          <Button variant="outline" size="sm" className="h-9" onClick={exportCsv}>
+            <Download className="h-4 w-4" /> Export page CSV
+          </Button>
         }
       />
 
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        {[
-          ["All", orders.length],
-          ["Pending", orders.filter((o) => o.status === "Pending").length],
-          ["Processing", orders.filter((o) => o.status === "Processing").length],
-          ["Shipped", orders.filter((o) => o.status === "Shipped").length],
-          ["Delivered", orders.filter((o) => o.status === "Delivered").length],
-          ["Refunded", orders.filter((o) => o.status === "Refunded").length],
-        ].map(([label, count]) => (
-          <button
-            key={String(label)}
-            onClick={() => {
-              setStatus(label === "All" ? "all" : String(label));
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative min-w-56 flex-1">
+          <Input
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
               setPage(1);
             }}
-            className={`card-surface px-3 py-2.5 text-left transition-colors hover:bg-surface-muted ${
-              status === (label === "All" ? "all" : label) ? "border-primary ring-1 ring-primary/30" : ""
-            }`}
-          >
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="num mt-0.5 text-lg font-semibold">{String(count)}</p>
-          </button>
-        ))}
+            placeholder="Search order number, customer or email"
+            aria-label="Search orders"
+            className="h-9"
+          />
+        </div>
+        <Select
+          value={status}
+          onValueChange={(v) => {
+            setStatus(v);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="h-9 w-40" aria-label="Filter by order status">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="Pending">Pending</SelectItem>
+            <SelectItem value="Processing">Processing</SelectItem>
+            <SelectItem value="Shipped">Shipped</SelectItem>
+            <SelectItem value="Delivered">Delivered</SelectItem>
+            <SelectItem value="Cancelled">Cancelled</SelectItem>
+            <SelectItem value="Refunded">Refunded</SelectItem>
+            <SelectItem value="Expired">Expired</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={payment}
+          onValueChange={(v) => {
+            setPayment(v);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="h-9 w-44" aria-label="Filter by payment status">
+            <SelectValue placeholder="All payments" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All payments</SelectItem>
+            <SelectItem value="Paid">Paid</SelectItem>
+            <SelectItem value="Pending">Pending</SelectItem>
+            <SelectItem value="Initiated">Initiated</SelectItem>
+            <SelectItem value="Failed">Failed</SelectItem>
+            <SelectItem value="Refunded">Refunded</SelectItem>
+            <SelectItem value="Cancelled">Cancelled</SelectItem>
+            <SelectItem value="Expired">Expired</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <Section bodyClassName="p-0">
-        <div className="flex flex-col gap-3 border-b p-3 lg:flex-row lg:items-center">
-          <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Search order ID, customer or product..."
-              className="h-9 pl-9"
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Select value={status} onValueChange={(v) => { setStatus(v); setPage(1); }}>
-              <SelectTrigger className="h-9 w-[148px]"><SelectValue placeholder="Status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {["Pending", "Processing", "Shipped", "Delivered", "Cancelled", "Refunded"].map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={payment} onValueChange={(v) => { setPayment(v); setPage(1); }}>
-              <SelectTrigger className="h-9 w-[168px]"><SelectValue placeholder="Payment" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All payments</SelectItem>
-                {["Credit Card", "Digital Wallet", "Cash on Delivery", "Bank Transfer"].map((p) => (
-                  <SelectItem key={p} value={p}>{p}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="sm" className="h-9">
-              <Filter className="h-4 w-4" /> Date range
-            </Button>
-            <Button variant="outline" size="icon" className="h-9 w-9">
-              <SlidersHorizontal className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {selected.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 border-b bg-primary/5 px-4 py-2.5">
-            <p className="num text-xs font-medium">{selected.length} selected</p>
-            <div className="ml-auto flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" className="h-8" onClick={() => toast.success(`${selected.length} orders marked as shipped`)}>Mark shipped</Button>
-              <Button size="sm" variant="outline" className="h-8" onClick={() => toast.success("Invoices sent to printer queue")}>Print invoices</Button>
-              <Button size="sm" variant="outline" className="h-8" onClick={() => setSelected([])}>Clear</Button>
+        {ordersQuery.isLoading ? (
+          <div className="p-4">
+            <div className="space-y-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-10 w-full animate-pulse rounded bg-surface-muted" />
+              ))}
             </div>
           </div>
-        )}
-
-        {current.length === 0 ? (
-          <EmptyState
-            title="No orders found"
-            description="Try adjusting your search terms or clearing the status and payment filters."
-            action={<Button variant="outline" size="sm" onClick={() => { setQuery(""); setStatus("all"); setPayment("all"); }}>Reset filters</Button>}
-          />
+        ) : ordersQuery.isError ? (
+          <div className="p-6">
+            <EmptyState
+              title="Could not load orders"
+              description={
+                ordersQuery.error instanceof AdminApiError
+                  ? ordersQuery.error.message
+                  : "Check your connection and try again."
+              }
+            />
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="p-6">
+            <EmptyState
+              title="No orders found"
+              description="Try adjusting the search or filters. Storefront orders appear here in real time."
+            />
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-surface-muted/70 backdrop-blur">
-                <tr className="text-left text-xs text-muted-foreground">
-                  <th className="w-10 px-4 py-2.5">
-                    <Checkbox
-                      checked={allChecked}
-                      onCheckedChange={(v) =>
-                        setSelected(v ? current.map((o) => o.id) : [])
-                      }
-                      aria-label="Select all"
-                    />
-                  </th>
-                  <th className="px-4 py-2.5 font-medium">Order ID</th>
-                  <th className="px-4 py-2.5 font-medium">Customer</th>
-                  <th className="px-4 py-2.5 font-medium">Product</th>
-                  <th className="px-4 py-2.5 font-medium">Date</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Amount</th>
-                  <th className="px-4 py-2.5 font-medium">Payment</th>
-                  <th className="px-4 py-2.5 font-medium">Status</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Actions</th>
+              <thead>
+                <tr className="border-b text-left text-label text-muted-foreground">
+                  <th className="px-4 py-2.5 font-medium sm:px-5">Order</th>
+                  <th className="px-4 py-2.5 font-medium sm:px-5">Customer</th>
+                  <th className="hidden px-4 py-2.5 font-medium md:table-cell md:px-5">Items</th>
+                  <th className="hidden px-4 py-2.5 font-medium lg:table-cell lg:px-5">Date</th>
+                  <th className="px-4 py-2.5 text-right font-medium sm:px-5">Total</th>
+                  <th className="hidden px-4 py-2.5 font-medium lg:table-cell lg:px-5">Payment</th>
+                  <th className="px-4 py-2.5 font-medium sm:px-5">Status</th>
+                  <th className="px-4 py-2.5 text-right font-medium sm:px-5">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {current.map((o) => (
-                  <tr key={o.id} className="border-t transition-colors hover:bg-surface-muted/50">
-                    <td className="px-4 py-2.5">
-                      <Checkbox
-                        checked={selected.includes(o.id)}
-                        onCheckedChange={(v) =>
-                          setSelected((s) => (v ? [...s, o.id] : s.filter((x) => x !== o.id)))
-                        }
-                        aria-label={`Select ${o.id}`}
-                      />
-                    </td>
-                    <td className="px-4 py-2.5">
+                {rows.map((o) => (
+                  <tr key={o.id} className="border-b last:border-0">
+                    <td className="px-4 py-2.5 sm:px-5">
                       <Link to="/orders/$orderId" params={{ orderId: o.id }} className="num font-medium text-primary hover:underline">
-                        {o.id}
+                        {o.orderNumber}
                       </Link>
                     </td>
                     <td className="px-4 py-2.5">
-                      <p className="whitespace-nowrap">{o.customer}</p>
+                      <p className="whitespace-nowrap">{o.customer?.name ?? "Guest"}</p>
                       <p className="truncate text-xs text-muted-foreground">{o.email}</p>
                     </td>
-                    <td className="max-w-56 px-4 py-2.5">
-                      <p className="truncate">{o.product}</p>
-                      <p className="text-xs text-muted-foreground">{o.items} item(s)</p>
+                    <td className="max-w-56 hidden px-4 py-2.5 md:table-cell md:px-5">
+                      <p className="truncate">{o.items[0]?.name ?? "-"}</p>
+                      <p className="text-xs text-muted-foreground">{o.items.reduce((n, it) => n + it.qty, 0)} item(s)</p>
                     </td>
-                    <td className="num px-4 py-2.5 whitespace-nowrap text-muted-foreground">{o.date}</td>
-                    <td className="num px-4 py-2.5 text-right font-medium">{currency(o.amount)}</td>
-                    <td className="px-4 py-2.5 whitespace-nowrap">
-                      <p className="text-muted-foreground">{o.payment}</p>
-                      <p className="text-xs text-muted-foreground">{o.paymentStatus}</p>
+                    <td className="num hidden whitespace-nowrap px-4 py-2.5 text-muted-foreground lg:table-cell lg:px-5">
+                      {new Date(o.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-2.5"><StatusBadge status={o.status} /></td>
-                    <td className="px-4 py-2.5 text-right">
+                    <td className="num whitespace-nowrap px-4 py-2.5 text-right font-medium sm:px-5">{formatNpr(o.amounts.total)}</td>
+                    <td className="hidden whitespace-nowrap px-4 py-2.5 lg:table-cell lg:px-5">
+                      <p className="text-muted-foreground">{o.payment.method}</p>
+                      <p className="text-xs text-muted-foreground">{o.payment.status}</p>
+                    </td>
+                    <td className="px-4 py-2.5 sm:px-5"><StatusBadge status={o.status} /></td>
+                    <td className="px-4 py-2.5 text-right sm:px-5">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Actions for ${o.orderNumber}`}>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -250,16 +259,28 @@ function OrdersPage() {
                               <Eye className="h-4 w-4" /> View
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => toast.success(`Invoice for ${o.id} sent to printer`)}>
-                            <Printer className="h-4 w-4" /> Print invoice
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => toast.success(`Refund initiated for ${o.id}`)}>
-                            <RefreshCcw className="h-4 w-4" /> Refund
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => toast.error(`${o.id} cancelled`)}>
-                            <XCircle className="h-4 w-4" /> Cancel
-                          </DropdownMenuItem>
+                          {o.payment.status === "Paid" && o.status !== "Refunded" ? (
+                            <DropdownMenuSeparator />
+                          ) : null}
+                          {o.payment.status === "Paid" && o.status !== "Refunded" ? (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                act(() => refund.mutateAsync({ id: o.id }), `Refund initiated for ${o.orderNumber}`)
+                              }
+                            >
+                              <RefreshCcw className="h-4 w-4" /> Refund
+                            </DropdownMenuItem>
+                          ) : null}
+                          {o.status === "Pending" || o.status === "Processing" ? (
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() =>
+                                act(() => cancel.mutateAsync({ id: o.id }), `${o.orderNumber} cancelled`)
+                              }
+                            >
+                              <XCircle className="h-4 w-4" /> Cancel
+                            </DropdownMenuItem>
+                          ) : null}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>
@@ -269,8 +290,7 @@ function OrdersPage() {
             </table>
           </div>
         )}
-
-        <TablePagination page={page} pageCount={pageCount} total={filtered.length} onPage={setPage} />
+        <TablePagination page={page} pageCount={pageCount} total={total} onPage={setPage} />
       </Section>
     </AppShell>
   );
