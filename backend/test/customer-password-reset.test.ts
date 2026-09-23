@@ -5,7 +5,7 @@ import { getApp, seedCustomerAccount, TEST_PASSWORD } from "./helpers/fixtures.j
 import { hashToken } from "../src/utils/jwt.js";
 import { CustomerAccountModel } from "../src/modules/customer-auth/customerAccount.model.js";
 import { env } from "../src/config/env.js";
-import { smtpEnabled, resetMailerForTests } from "../src/utils/mailer.js";
+import { resetMailerForTests } from "../src/utils/mailer.js";
 
 const app = getApp();
 
@@ -28,7 +28,14 @@ const app = getApp();
  * Capture what the mailer sends and give tests control over delivery. The
  * mock mirrors the real contract (throw on failure) without any network I/O.
  */
-const sendMailMock = vi.fn(async () => undefined);
+const sendMailMock = vi.fn(
+  async (_mail: {
+    to: string;
+    subject?: string;
+    text?: string;
+    html?: string;
+  }) => undefined,
+);
 const createTransportMock = vi.fn(() => ({ sendMail: sendMailMock }));
 
 vi.mock("nodemailer", () => ({
