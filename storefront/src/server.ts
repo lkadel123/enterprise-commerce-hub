@@ -44,17 +44,13 @@ import { API_BASE_URL } from "./config/env.js";
 
 const SEO_CACHE_CONTROL = "public, max-age=900";
 
-async function serveSeoFile(
-  pathname: "/robots.txt" | "/sitemap.xml",
-): Promise<Response | null> {
+async function serveSeoFile(pathname: "/robots.txt" | "/sitemap.xml"): Promise<Response | null> {
   try {
     const res = await fetch(`${API_BASE_URL}${pathname}`, { redirect: "error" });
     if (!res.ok) return null;
     const body = await res.text();
     const contentType =
-      pathname === "/robots.txt"
-        ? "text/plain; charset=utf-8"
-        : "application/xml; charset=utf-8";
+      pathname === "/robots.txt" ? "text/plain; charset=utf-8" : "application/xml; charset=utf-8";
     return new Response(body, {
       status: 200,
       headers: { "content-type": contentType, "cache-control": SEO_CACHE_CONTROL },

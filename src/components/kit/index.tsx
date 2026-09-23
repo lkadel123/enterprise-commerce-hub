@@ -17,12 +17,8 @@ export function PageHeader({
   return (
     <div className="mb-5 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
-          {title}
-        </h1>
-        {description && (
-          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-        )}
+        <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>
+        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -114,9 +110,7 @@ export function StatCard({
           <span
             className={cn(
               "num inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-medium",
-              positive
-                ? "bg-success/10 text-success"
-                : "bg-destructive/10 text-destructive",
+              positive ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive",
             )}
           >
             {positive ? (
@@ -197,7 +191,9 @@ export function EmptyState({
   return (
     <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
       <div className="grid h-11 w-11 place-items-center rounded-lg border bg-surface-muted">
-        <Badge variant="secondary" className="px-1.5">0</Badge>
+        <Badge variant="secondary" className="px-1.5">
+          0
+        </Badge>
       </div>
       <p className="mt-3 text-sm font-medium">{title}</p>
       <p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>

@@ -19,8 +19,7 @@ export async function notifyCustomerByCrmCustomerId(
 ): Promise<void> {
   if (!crmCustomerId) return;
   try {
-    const accountId =
-      await customerAuthRepository.findAccountIdByCrmCustomerId(crmCustomerId);
+    const accountId = await customerAuthRepository.findAccountIdByCrmCustomerId(crmCustomerId);
     if (!accountId) return;
     await notificationService.notifyCustomerOnce(accountId, type, title, options);
   } catch (error) {

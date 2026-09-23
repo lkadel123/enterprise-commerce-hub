@@ -1,11 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  Download,
-  Eye,
-  MoreHorizontal,
-  RefreshCcw,
-  XCircle,
-} from "lucide-react";
+import { Download, Eye, MoreHorizontal, RefreshCcw, XCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -38,7 +32,8 @@ export const Route = createFileRoute("/orders/")({
       { title: "Orders - Northpeak Commerce Console" },
       {
         name: "description",
-        content: "Search, filter and fulfil customer orders with payment status and refund workflows.",
+        content:
+          "Search, filter and fulfil customer orders with payment status and refund workflows.",
       },
     ],
   }),
@@ -48,7 +43,16 @@ export const Route = createFileRoute("/orders/")({
 const PAGE_SIZE = 10;
 
 function ordersToCsv(rows: OrderDto[]): string {
-  const header = ["Order", "Customer", "Email", "Items", "Total", "Status", "Payment status", "Created"];
+  const header = [
+    "Order",
+    "Customer",
+    "Email",
+    "Items",
+    "Total",
+    "Status",
+    "Payment status",
+    "Created",
+  ];
   const lines = rows.map((o) =>
     [
       o.orderNumber,
@@ -225,7 +229,11 @@ function OrdersPage() {
                 {rows.map((o) => (
                   <tr key={o.id} className="border-b last:border-0">
                     <td className="px-4 py-2.5 sm:px-5">
-                      <Link to="/orders/$orderId" params={{ orderId: o.id }} className="num font-medium text-primary hover:underline">
+                      <Link
+                        to="/orders/$orderId"
+                        params={{ orderId: o.id }}
+                        className="num font-medium text-primary hover:underline"
+                      >
                         {o.orderNumber}
                       </Link>
                     </td>
@@ -235,21 +243,32 @@ function OrdersPage() {
                     </td>
                     <td className="max-w-56 hidden px-4 py-2.5 md:table-cell md:px-5">
                       <p className="truncate">{o.items[0]?.name ?? "-"}</p>
-                      <p className="text-xs text-muted-foreground">{o.items.reduce((n, it) => n + it.qty, 0)} item(s)</p>
+                      <p className="text-xs text-muted-foreground">
+                        {o.items.reduce((n, it) => n + it.qty, 0)} item(s)
+                      </p>
                     </td>
                     <td className="num hidden whitespace-nowrap px-4 py-2.5 text-muted-foreground lg:table-cell lg:px-5">
                       {new Date(o.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="num whitespace-nowrap px-4 py-2.5 text-right font-medium sm:px-5">{formatNpr(o.amounts.total)}</td>
+                    <td className="num whitespace-nowrap px-4 py-2.5 text-right font-medium sm:px-5">
+                      {formatNpr(o.amounts.total)}
+                    </td>
                     <td className="hidden whitespace-nowrap px-4 py-2.5 lg:table-cell lg:px-5">
                       <p className="text-muted-foreground">{o.payment.method}</p>
                       <p className="text-xs text-muted-foreground">{o.payment.status}</p>
                     </td>
-                    <td className="px-4 py-2.5 sm:px-5"><StatusBadge status={o.status} /></td>
+                    <td className="px-4 py-2.5 sm:px-5">
+                      <StatusBadge status={o.status} />
+                    </td>
                     <td className="px-4 py-2.5 text-right sm:px-5">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Actions for ${o.orderNumber}`}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            aria-label={`Actions for ${o.orderNumber}`}
+                          >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -265,7 +284,10 @@ function OrdersPage() {
                           {o.payment.status === "Paid" && o.status !== "Refunded" ? (
                             <DropdownMenuItem
                               onClick={() =>
-                                act(() => refund.mutateAsync({ id: o.id }), `Refund initiated for ${o.orderNumber}`)
+                                act(
+                                  () => refund.mutateAsync({ id: o.id }),
+                                  `Refund initiated for ${o.orderNumber}`,
+                                )
                               }
                             >
                               <RefreshCcw className="h-4 w-4" /> Refund
@@ -275,7 +297,10 @@ function OrdersPage() {
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
                               onClick={() =>
-                                act(() => cancel.mutateAsync({ id: o.id }), `${o.orderNumber} cancelled`)
+                                act(
+                                  () => cancel.mutateAsync({ id: o.id }),
+                                  `${o.orderNumber} cancelled`,
+                                )
                               }
                             >
                               <XCircle className="h-4 w-4" /> Cancel

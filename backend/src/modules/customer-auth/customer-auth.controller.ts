@@ -33,7 +33,11 @@ export const customerAuthController = {
       result.refreshToken,
       customerRefreshCookieOptions(result.remember),
     );
-    res.cookie(CUSTOMER_SESSION_HINT_COOKIE_NAME, "1", customerSessionHintCookieOptions(result.remember));
+    res.cookie(
+      CUSTOMER_SESSION_HINT_COOKIE_NAME,
+      "1",
+      customerSessionHintCookieOptions(result.remember),
+    );
 
     sendSuccess(
       res,
@@ -55,7 +59,11 @@ export const customerAuthController = {
       result.refreshToken,
       customerRefreshCookieOptions(result.remember),
     );
-    res.cookie(CUSTOMER_SESSION_HINT_COOKIE_NAME, "1", customerSessionHintCookieOptions(result.remember));
+    res.cookie(
+      CUSTOMER_SESSION_HINT_COOKIE_NAME,
+      "1",
+      customerSessionHintCookieOptions(result.remember),
+    );
 
     sendSuccess(
       res,
@@ -82,7 +90,11 @@ export const customerAuthController = {
       result.refreshToken,
       customerRefreshCookieOptions(result.remember),
     );
-    res.cookie(CUSTOMER_SESSION_HINT_COOKIE_NAME, "1", customerSessionHintCookieOptions(result.remember));
+    res.cookie(
+      CUSTOMER_SESSION_HINT_COOKIE_NAME,
+      "1",
+      customerSessionHintCookieOptions(result.remember),
+    );
 
     sendSuccess(res, {
       customer: result.customer,
@@ -123,7 +135,11 @@ export const customerAuthController = {
   forgotPassword: asyncHandler(async (req, res) => {
     const result = await customerAuthService.forgotPassword(req.body.email, clientMeta(req));
 
-    sendSuccess(res, { requestId: result.requestId }, "If that email is registered, a password reset link has been sent.");
+    sendSuccess(
+      res,
+      { requestId: result.requestId },
+      "If that email is registered, a password reset link has been sent.",
+    );
   }),
 
   resetPassword: asyncHandler(async (req, res) => {

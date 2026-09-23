@@ -40,7 +40,10 @@ async function firstInStockCard(page: Page, gridId: string) {
   for (let i = 0; i < count; i++) {
     const btn = cards.nth(i).getByRole("button", { name: /add to cart/i });
     if ((await btn.count()) > 0 && (await btn.isEnabled())) {
-      return { card: cards.nth(i), href: await cards.nth(i).locator("a[href^='/products/']").first().getAttribute("href") };
+      return {
+        card: cards.nth(i),
+        href: await cards.nth(i).locator("a[href^='/products/']").first().getAttribute("href"),
+      };
     }
   }
   return null;
@@ -100,7 +103,10 @@ test("product card navigates from the image area AND from the price row (old dea
   const hit = await card2.evaluate((el: HTMLElement) => {
     const rect = el.getBoundingClientRect();
     for (let frac = 0.95; frac > 0.3; frac -= 0.05) {
-      const el2 = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height * frac);
+      const el2 = document.elementFromPoint(
+        rect.left + rect.width / 2,
+        rect.top + rect.height * frac,
+      );
       const anchor = el2?.closest("a");
       if (anchor) return { frac, href: anchor.getAttribute("href") };
     }
@@ -108,7 +114,10 @@ test("product card navigates from the image area AND from the price row (old dea
   });
   expect(hit, "some point below the card middle must hit the product link").not.toBeNull();
   expect(hit!.href).toMatch(/^\/products\//);
-  expect(hit!.frac, "the clickable point must be in the LOWER card half (price row)").toBeGreaterThan(0.5);
+  expect(
+    hit!.frac,
+    "the clickable point must be in the LOWER card half (price row)",
+  ).toBeGreaterThan(0.5);
   box = await cardBox(card2);
   await card2.click({ position: { x: box.width / 2, y: box.height * hit!.frac } });
   await expect(page).toHaveURL(/\/products\/[^/]+$/);
@@ -168,7 +177,7 @@ test("product detail supports direct URL, refresh, back and forward", async ({ p
 
 test("nonexistent product shows the not-found UI, never a blank page", async ({ page }) => {
   await page.goto("/products/definitely-not-a-real-product");
-  await expect(
-    page.getByText(/doesn't exist|no longer available|not found/i).first(),
-  ).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/doesn't exist|no longer available|not found/i).first()).toBeVisible({
+    timeout: 30_000,
+  });
 });

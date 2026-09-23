@@ -143,7 +143,10 @@ export const customerOrderService = {
         },
       );
     } catch (notifyError) {
-      /* non-fatal */ logger.warn({ orderId: order.id, error: notifyError }, "order_created notification failed");
+      /* non-fatal */ logger.warn(
+        { orderId: order.id, error: notifyError },
+        "order_created notification failed",
+      );
     }
 
     // Notify customer of coupon redemption (non-blocking, best-effort)

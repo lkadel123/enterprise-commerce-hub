@@ -19,7 +19,6 @@ import { orderService } from "../src/modules/orders/order.service.js";
 import { paymentProviderMap } from "../src/modules/payments/payment.providers.js";
 import type { PaymentProviderInterface } from "../src/modules/payments/payment.provider.js";
 
-
 const app = getApp();
 
 async function seedCommerce(price = 100) {
@@ -139,7 +138,7 @@ describe("F-03 generic status endpoint payment invariants", () => {
     const inv = await invFor(product._id.toString());
     expect(inv?.reserved).toBe(0);
   });
-it("decrements coupon usage when an unpaid order is cancelled via status update", async () => {
+  it("decrements coupon usage when an unpaid order is cancelled via status update", async () => {
     const { product } = await seedCommerce();
     const account = await seedCustomerAccount();
     await seedCoupon({ code: "F03-TEST10", value: 10 });
@@ -264,7 +263,7 @@ it("decrements coupon usage when an unpaid order is cancelled via status update"
       restore();
     }
   });
-it("does not allow an Expired order to flip to another status", async () => {
+  it("does not allow an Expired order to flip to another status", async () => {
     const { product } = await seedCommerce();
     const account = await seedCustomerAccount();
     const res = await placeOrder(account, product._id.toString());

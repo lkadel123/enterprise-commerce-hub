@@ -115,10 +115,11 @@ export async function cybersourceRequest(
   if (!response.ok) {
     const errorBody = await safeParseErrorBody(response);
     const reason =
-      errorBody?.errorInformation?.reason ?? errorBody?.errors?.[0]?.reason ?? errorBody?.response?.rmsg;
+      errorBody?.errorInformation?.reason ??
+      errorBody?.errors?.[0]?.reason ??
+      errorBody?.response?.rmsg;
     const code = errorBody?.errors?.find(
-      (entry): entry is CybersourceErrorEntry & { code: string } =>
-        typeof entry.code === "string",
+      (entry): entry is CybersourceErrorEntry & { code: string } => typeof entry.code === "string",
     )?.code;
     const messages = (errorBody?.errors ?? [])
       .map((entry) => [entry.location, entry.message].filter(isString).join(": ") || entry.message)

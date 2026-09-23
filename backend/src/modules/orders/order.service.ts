@@ -50,7 +50,11 @@ export function toOrderDto(order: OrderRecord): OrderDto {
     id: order._id.toString(),
     orderNumber: order.orderNumber,
     customer: order.customer
-      ? { id: order.customer._id.toString(), name: order.customer.name, email: order.customer.email }
+      ? {
+          id: order.customer._id.toString(),
+          name: order.customer.name,
+          email: order.customer.email,
+        }
       : null,
     email: order.email,
     region: order.region,
@@ -118,7 +122,11 @@ async function requestGatewayRefund(
   try {
     const outcome = await provider.refund(providerTransactionId, amount);
     const status: GatewayRefundOutcome["status"] =
-      outcome.status === "SUCCESS" ? "SUCCESS" : outcome.status === "PENDING" ? "PENDING" : "FAILED";
+      outcome.status === "SUCCESS"
+        ? "SUCCESS"
+        : outcome.status === "PENDING"
+          ? "PENDING"
+          : "FAILED";
     return { status, providerRef: outcome.providerRef };
   } catch (error) {
     logger.warn(
@@ -252,7 +260,11 @@ export const orderService = {
       );
       if (!record) {
         for (const rollback of items.slice(0, reservedCount)) {
-          await inventoryRepository.releaseReserved(rollback.product.toString(), warehouse, rollback.qty);
+          await inventoryRepository.releaseReserved(
+            rollback.product.toString(),
+            warehouse,
+            rollback.qty,
+          );
         }
         // Release the coupon reservations too (Phase 7 rollback contract).
         if (coupon) {
@@ -292,9 +304,7 @@ export const orderService = {
         payment: {
           method: (input.paymentMethod ?? "Credit Card") as IOrder["payment"]["method"],
           status: "Pending",
-          ...(input.paymentGateway
-            ? { metadata: { gatewayChoice: input.paymentGateway } }
-            : {}),
+          ...(input.paymentGateway ? { metadata: { gatewayChoice: input.paymentGateway } } : {}),
         },
         status: "Pending",
         addresses: {
@@ -376,7 +386,8 @@ export const orderService = {
       "order_expired",
       `Order #${updated.orderNumber} expired`,
       {
-        message: "Payment was not completed in time; the order has expired and reserved stock was released.",
+        message:
+          "Payment was not completed in time; the order has expired and reserved stock was released.",
         entityType: "order",
         entityId: updated._id.toString(),
         actionUrl: `/account/orders/${updated._id.toString()}`,

@@ -46,7 +46,6 @@ async function ensureSdk(): Promise<SentrySdkLike | null> {
   if (!env.SENTRY_DSN) return null;
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mod = (await import(SENTRY_NODE_SDK)) as SentrySdkLike;
     if (typeof mod.init === "function") {
       mod.init({
@@ -68,7 +67,7 @@ async function ensureSdk(): Promise<SentrySdkLike | null> {
       loadErrorReported = true;
       // Avoid importing the logger here to prevent a circular dependency; use a
       // plain console warning (redaction not needed — no payload authored).
-      // eslint-disable-next-line no-console
+
       console.warn(
         `[errorReporter] SENTRY_DSN is set but '${SENTRY_NODE_SDK}' is not installed. ` +
           "Install the Sentry SDK and configure the DSN before production.",

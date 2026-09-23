@@ -42,7 +42,9 @@ describe("ReviewStep", () => {
   it("renders the shipping summary, payment method and optional coupon", () => {
     renderStep({ couponCode: "SAVE10", choice: { method: "Credit Card", gateway: "CYBERSOURCE" } });
     expect(screen.getByText(/12 Thamel Road/i)).toBeInTheDocument();
-    expect(screen.getByText(/Credit Card — Card \(Cybersource Unified Checkout\)/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Credit Card — Card \(Cybersource Unified Checkout\)/i),
+    ).toBeInTheDocument();
     expect(screen.getByText(/SAVE10/)).toBeInTheDocument();
     expect(screen.getByText(/final discount confirmed by the store/i)).toBeInTheDocument();
   });

@@ -71,9 +71,12 @@ export function startOrderExpiryScheduler(): void {
   // Run once shortly after startup to catch anything that fell behind while the
   // process was down (restart catch-up), then on the interval. `unref` lets the
   // event loop exit cleanly during graceful shutdown.
-  const initial: NodeJS.Timeout = setTimeout(() => {
-    void runOrderExpirySweep();
-  }, Math.min(intervalMs, 1000));
+  const initial: NodeJS.Timeout = setTimeout(
+    () => {
+      void runOrderExpirySweep();
+    },
+    Math.min(intervalMs, 1000),
+  );
   initial.unref?.();
   const recurring = setInterval(() => {
     void runOrderExpirySweep();

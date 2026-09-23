@@ -7,8 +7,6 @@ import { customerPaymentsApi } from "@/lib/api/payments";
 import type { CustomerPaymentDto } from "@/types";
 import { decodeCaptureContext, isCurrentOriginAllowed } from "./capture-context";
 
-
-
 const CONTAINER_ID = "cybersource-payment-selection";
 const SCRIPT_ID = "cybersource-unified-checkout-sdk";
 
@@ -156,7 +154,6 @@ function loadSdkScript(clientLibrary: string, integrity?: string): Promise<void>
     document.body.appendChild(script);
   });
 }
-
 
 export function CybersourceCheckout({ orderId, onSettled }: CybersourceCheckoutProps) {
   const [phase, setPhase] = useState<Phase>("idle");

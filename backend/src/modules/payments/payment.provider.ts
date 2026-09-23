@@ -96,8 +96,5 @@ export interface PaymentProviderInterface {
    * Request a refund through the gateway. Only invoked when {@link refundCapability}
    * returns "SUPPORTED". Amount is always the server-authoritative captured amount.
    */
-  refund?(
-    providerTransactionId: string,
-    amount: number,
-  ): Promise<ProviderRefundResult>;
+  refund?(providerTransactionId: string, amount: number): Promise<ProviderRefundResult>;
 }

@@ -62,7 +62,6 @@ afterAll(async () => {
 });
 
 describe("Customer payments", () => {
-
   it("rejects unauthenticated initiate/verify/status with 401", async () => {
     const { product } = await seedCommerce();
     const account = await seedCustomerAccount({ email: "payer@test.com" });
@@ -382,11 +381,11 @@ describe("Gateway payment lifecycle (offline)", () => {
     }>,
   ) {
     paymentProviderMap.FONEPAY = {
-      initiate: (async () => ({
+      initiate: async () => ({
         providerTransactionId: "fp_test_reference",
         expiresAt: new Date(Date.now() + 3_600_000),
         currency: "NPR",
-      })),
+      }),
       verify: verifyImpl,
       getStatus: async () => ({ status: "Pending", amount: 0, metadata: {} }),
       refundCapability: () => "UNSUPPORTED",
@@ -413,9 +412,9 @@ describe("Gateway payment lifecycle (offline)", () => {
 
   /** Reads the stored provider transaction reference for an order. */
   async function storedReference(orderId: string): Promise<string> {
-    const seeded = (await OrderModel.findById(orderId).lean()) as
-      | { payment?: { providerTransactionId?: string } }
-      | null;
+    const seeded = (await OrderModel.findById(orderId).lean()) as {
+      payment?: { providerTransactionId?: string };
+    } | null;
     const ref = seeded?.payment?.providerTransactionId;
     if (!ref) throw new Error("order has no stored providerTransactionId");
     return ref;

@@ -1,6 +1,8 @@
 import type { RequestHandler } from "express";
 import { randomUUID } from "node:crypto";
 
+/* eslint-disable @typescript-eslint/no-namespace */
+
 declare global {
   namespace Express {
     interface Request {

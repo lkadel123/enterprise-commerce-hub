@@ -38,10 +38,8 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
   const src = mediaUrl(image?.url);
   const alt = image?.alt ?? name;
 
-  const previous = () =>
-    setActiveIndex((i) => (count <= 1 ? i : (i - 1 + count) % count));
-  const next = () =>
-    setActiveIndex((i) => (count <= 1 ? i : (i + 1) % count));
+  const previous = () => setActiveIndex((i) => (count <= 1 ? i : (i - 1 + count) % count));
+  const next = () => setActiveIndex((i) => (count <= 1 ? i : (i + 1) % count));
 
   // Lightweight swipe (no dependency): horizontal swipe flips the image.
   const touchStartX = React.useRef<number | null>(null);

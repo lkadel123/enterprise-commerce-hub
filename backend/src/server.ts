@@ -2,7 +2,10 @@ import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 import { connectDB, disconnectDB } from "./database/connection.js";
 import { logger } from "./utils/logger.js";
-import { startOrderExpiryScheduler, stopOrderExpiryScheduler } from "./modules/orders/expiry-scheduler.js";
+import {
+  startOrderExpiryScheduler,
+  stopOrderExpiryScheduler,
+} from "./modules/orders/expiry-scheduler.js";
 
 async function bootstrap(): Promise<void> {
   await connectDB();

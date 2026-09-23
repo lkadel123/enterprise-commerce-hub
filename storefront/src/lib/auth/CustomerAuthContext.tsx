@@ -12,10 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { configureClient, setAccessToken } from "@/lib/api/client";
 import { customerAuthApi } from "@/lib/api/customer-client";
-import {
-  clearCustomerSessionHint,
-  hasCustomerSessionHint,
-} from "@/lib/auth/sessionHint";
+import { clearCustomerSessionHint, hasCustomerSessionHint } from "@/lib/auth/sessionHint";
 import type { CustomerAuthProfile } from "@/types";
 
 /**

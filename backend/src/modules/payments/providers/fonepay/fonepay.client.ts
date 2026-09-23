@@ -91,7 +91,11 @@ async function fonepayErrorFromResponse(
   }
 
   if (response.status === 400) {
-    return new FonepayApiError(400, "validation", providerMessage || "Fonepay rejected the request.");
+    return new FonepayApiError(
+      400,
+      "validation",
+      providerMessage || "Fonepay rejected the request.",
+    );
   }
   if (response.status === 401) {
     return new FonepayApiError(401, "auth", "Fonepay authentication failed.");
@@ -121,10 +125,7 @@ async function fonepaySignedRequest<T>(options: {
 }): Promise<T> {
   assertConfigured();
   const body = JSON.stringify(options.payload); // serialized exactly once
-  const signature = signFonepayPayload(
-    normalizeFonepayPrivateKey(env.FONEPAY_PRIVATE_KEY),
-    body,
-  );
+  const signature = signFonepayPayload(normalizeFonepayPrivateKey(env.FONEPAY_PRIVATE_KEY), body);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), fonepayTimeoutMs());

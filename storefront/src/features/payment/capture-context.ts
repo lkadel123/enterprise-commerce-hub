@@ -49,8 +49,7 @@ export function isAllowedCybersourceScriptUrl(rawUrl: string): boolean {
     const url = new URL(rawUrl);
     return (
       url.protocol === "https:" &&
-      (url.hostname === "cybersource.com" ||
-        url.hostname.endsWith(CYBERSOURCE_HOST_SUFFIX))
+      (url.hostname === "cybersource.com" || url.hostname.endsWith(CYBERSOURCE_HOST_SUFFIX))
     );
   } catch {
     return false;
@@ -95,9 +94,7 @@ function findSessionValues(
       return;
     }
     if (current !== null && typeof current === "object") {
-      for (const [key, value] of Object.entries(
-        current as Record<string, unknown>,
-      )) {
+      for (const [key, value] of Object.entries(current as Record<string, unknown>)) {
         if (keys.includes(key) && typeof value === "string" && !found.has(key)) {
           found.set(key, value);
         } else if (
@@ -127,14 +124,10 @@ function findSessionValues(
  * backend, which re-verifies the signed transient token server-side after
  * payment and matches it against the stored session reference.
  */
-export function decodeCaptureContext(
-  captureContext: string,
-): CybersourceClientSession {
+export function decodeCaptureContext(captureContext: string): CybersourceClientSession {
   const parts = captureContext.trim().split(".");
   if (parts.length !== 3) {
-    throw new Error(
-      "Malformed capture context: expected a JWT with three segments.",
-    );
+    throw new Error("Malformed capture context: expected a JWT with three segments.");
   }
 
   let payload: unknown;
@@ -158,9 +151,7 @@ export function decodeCaptureContext(
 
   const clientLibrary = values.get("clientLibrary");
   if (!clientLibrary) {
-    throw new Error(
-      "Capture context is missing the Unified Checkout client library URL.",
-    );
+    throw new Error("Capture context is missing the Unified Checkout client library URL.");
   }
   if (!isAllowedCybersourceScriptUrl(clientLibrary)) {
     throw new Error(

@@ -26,7 +26,10 @@ export class UnverifiedEmailError extends OAuthProviderError {
 }
 
 /** Minimal outbound fetch with timeout + safe error mapping. */
-export async function oauthFetchJson(url: string, init?: RequestInit): Promise<Record<string, unknown>> {
+export async function oauthFetchJson(
+  url: string,
+  init?: RequestInit,
+): Promise<Record<string, unknown>> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), env.OAUTH_REQUEST_TIMEOUT_MS);
   try {
@@ -40,7 +43,10 @@ export async function oauthFetchJson(url: string, init?: RequestInit): Promise<R
     }
     if (!response.ok) {
       // Log the provider's raw failure server-side; never surface it.
-      logger.warn({ url: redactUrl(url), status: response.status, body }, "OAuth provider request failed");
+      logger.warn(
+        { url: redactUrl(url), status: response.status, body },
+        "OAuth provider request failed",
+      );
       throw new OAuthProviderError(`Provider request failed (${response.status})`);
     }
     if (body === null || typeof body !== "object" || Array.isArray(body)) {

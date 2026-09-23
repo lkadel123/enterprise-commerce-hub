@@ -53,18 +53,15 @@ function providerDiagnostics(error: unknown): Record<string, unknown> {
 /** Build the customer-safe payment DTO from the authoritative order record. */
 function toCustomerPaymentDto(order: OrderRecord): CustomerPaymentDto {
   const gatewayMeta = order.payment.metadata as
-    | { paymentUrl?: unknown; expiresAt?: unknown }
-    | undefined;
+    { paymentUrl?: unknown; expiresAt?: unknown } | undefined;
   const fonepayMeta = order.payment.metadata?.fonepay as
-    | { qrImage?: unknown; displayName?: unknown }
-    | undefined;
+    { qrImage?: unknown; displayName?: unknown } | undefined;
   // Cybersource Unified Checkout public session data (server-created
   // Sessions API response): the capture-context JWT the browser uses to
   // render Cybersource's own iframe. Contains NO credentials and NO
   // financial authority — the amount/currency stay server-side.
   const cybersourceMeta = order.payment.metadata?.cybersource as
-    | { captureContext?: unknown }
-    | undefined;
+    { captureContext?: unknown } | undefined;
 
   const payment: CustomerPaymentDto = {
     orderId: order._id.toString(),
@@ -87,14 +84,11 @@ function toCustomerPaymentDto(order: OrderRecord): CustomerPaymentDto {
     // Hosted-checkout gateways — the checkout URL from the live session is
     // DISPLAY/redirect data only; it is never proof of payment.
     paymentUrl: typeof gatewayMeta?.paymentUrl === "string" ? gatewayMeta.paymentUrl : null,
-    expiresAt:
-      typeof gatewayMeta?.expiresAt === "string" ? gatewayMeta.expiresAt : null,
+    expiresAt: typeof gatewayMeta?.expiresAt === "string" ? gatewayMeta.expiresAt : null,
     // Cybersource Unified Checkout — public, one-time capture context for the
     // embedded SDK. Present only for CYBERSOURCE payments.
     clientToken:
-      typeof cybersourceMeta?.captureContext === "string"
-        ? cybersourceMeta.captureContext
-        : null,
+      typeof cybersourceMeta?.captureContext === "string" ? cybersourceMeta.captureContext : null,
   };
   return payment;
 }
@@ -157,7 +151,7 @@ async function applyVerifiedStatus(
 }
 
 const customerPaymentService = {
-/**
+  /**
    * Initiate a payment for one of the authenticated customer's orders.
    * Creates a hosted-checkout session. The payable amount is taken
    * from `Order.amounts.total` (server-side). A client-supplied amount is
@@ -312,7 +306,7 @@ const customerPaymentService = {
 
     return { payment, duplicate: false };
   },
-/**
+  /**
    * Verify a payment for a customer-owned order (server-to-server gateway
    * lookup). The transaction reference must match the one stored at
    * initiation and the provider-confirmed amount must match the server-side
@@ -427,7 +421,7 @@ const customerPaymentService = {
           duplicate: false,
         };
       }
-// Amount verified: mark Paid ATOMICALLY (Phase 16F). The guarded
+      // Amount verified: mark Paid ATOMICALLY (Phase 16F). The guarded
       // findOneAndUpdate only matches an order that is still payable, so a
       // concurrent cancel/expire wins safely.
       // `payment.transactionId` must be the GATEWAY's transaction identifier
@@ -593,14 +587,11 @@ const customerPaymentService = {
 
     // Terminal settlement reached — stop listening for this QR.
     const current = await orderRepository.findByIdPopulated(orderId);
-    if (
-      current &&
-      ["Paid", "Failed", "Cancelled", "Refunded"].includes(current.payment.status)
-    ) {
+    if (current && ["Paid", "Failed", "Cancelled", "Refunded"].includes(current.payment.status)) {
       closeFonepayMonitor(referenceLabel, "terminal_status");
     }
   },
-/** Fetch the current customer-safe payment status (ownership scoped). */
+  /** Fetch the current customer-safe payment status (ownership scoped). */
   async getStatus(customerAccountId: string, orderId: string): Promise<CustomerPaymentDto> {
     const crmCustomerId = await ensureCrmCustomer(customerAccountId);
     const order = await customerPaymentRepository.findByIdForCustomer(orderId, crmCustomerId);
@@ -614,10 +605,7 @@ const customerPaymentService = {
    * Refunded payments. Best-effort gateway-side session expiry when the
    * provider supports it.
    */
-  async cancelPayment(
-    customerAccountId: string,
-    orderId: string,
-  ): Promise<CustomerPaymentResult> {
+  async cancelPayment(customerAccountId: string, orderId: string): Promise<CustomerPaymentResult> {
     const crmCustomerId = await ensureCrmCustomer(customerAccountId);
     const order = await customerPaymentRepository.findByIdForCustomer(orderId, crmCustomerId);
     if (!order) throw notFound("Order not found.");

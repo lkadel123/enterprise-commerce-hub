@@ -390,19 +390,15 @@ export interface InventoryListParams {
 // ---------------------------------------------------------------------------
 
 export type OrderStatus =
-  | "Pending"
-  | "Processing"
-  | "Shipped"
-  | "Delivered"
-  | "Cancelled"
-  | "Refunded"
-  | "Expired";
+  "Pending" | "Processing" | "Shipped" | "Delivered" | "Cancelled" | "Refunded" | "Expired";
 
-export type PaymentStatus = "Paid" | "Pending" | "Refunded" | "Failed" | "Initiated" | "Cancelled" | "Expired";
+export type PaymentStatus =
+  "Paid" | "Pending" | "Refunded" | "Failed" | "Initiated" | "Cancelled" | "Expired";
 
 export type PaymentMethod = "Credit Card" | "Cash on Delivery" | "Digital Wallet" | "Bank Transfer";
 
-export type PaymentProvider = "PAYBRIDGE" | "CYBERSOURCE" | "FONEPAY" | "KHALTI" | "ESEWA" | "COD" | "BANK_TRANSFER";
+export type PaymentProvider =
+  "PAYBRIDGE" | "CYBERSOURCE" | "FONEPAY" | "KHALTI" | "ESEWA" | "COD" | "BANK_TRANSFER";
 
 export interface OrderLineItemDto {
   productId: string;
@@ -444,8 +440,22 @@ export interface OrderDto {
   payment: OrderPaymentDto;
   status: OrderStatus;
   addresses: {
-    shipping: { line1: string; line2?: string; city: string; state?: string; postalCode?: string; country: string } | null;
-    billing: { line1: string; line2?: string; city: string; state?: string; postalCode?: string; country: string } | null;
+    shipping: {
+      line1: string;
+      line2?: string;
+      city: string;
+      state?: string;
+      postalCode?: string;
+      country: string;
+    } | null;
+    billing: {
+      line1: string;
+      line2?: string;
+      city: string;
+      state?: string;
+      postalCode?: string;
+      country: string;
+    } | null;
   };
   timeline: { label: string; at: string; done: boolean }[];
   coupon: { couponId: string; code: string; discount: number } | null;

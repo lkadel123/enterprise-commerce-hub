@@ -10,7 +10,9 @@ export const customerOrderController = {
     // never scope a key to another customer's orders.
     const rawKey = req.header("Idempotency-Key");
     const idempotencyKey =
-      typeof rawKey === "string" && rawKey.trim().length > 0 ? rawKey.trim().slice(0, 200) : undefined;
+      typeof rawKey === "string" && rawKey.trim().length > 0
+        ? rawKey.trim().slice(0, 200)
+        : undefined;
     const order = await customerOrderService.create(req.customer!.id, {
       ...req.body,
       idempotencyKey,

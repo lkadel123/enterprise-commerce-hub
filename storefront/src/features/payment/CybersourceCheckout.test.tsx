@@ -40,10 +40,7 @@ const CONTAINER_SELECTOR = "#cybersource-payment-selection";
 
 /** base64url-encode a JSON value, exactly like a JWT segment. */
 function encodeSegment(value: unknown): string {
-  return btoa(JSON.stringify(value))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  return btoa(JSON.stringify(value)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 /**
@@ -58,8 +55,7 @@ const CAPTURE_CONTEXT = [
       {
         type: "uc-1.0",
         data: {
-          clientLibrary:
-            "https://testup.cybersource.com/uc/v1/assets/1.0.5/UnifiedCheckout.js",
+          clientLibrary: "https://testup.cybersource.com/uc/v1/assets/1.0.5/UnifiedCheckout.js",
           clientLibraryIntegrity: "sha384-test-integrity",
         },
       },
@@ -230,9 +226,7 @@ describe("CybersourceCheckout", () => {
     // the panel then inspects window.VAS and reports the missing entry point.
     await waitFor(() => {
       script.dispatchEvent(new Event("load"));
-      expect(
-        screen.getByText(/card payment form could not be initialised/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/card payment form could not be initialised/i)).toBeInTheDocument();
     });
     expect(screen.getByRole("button", { name: /retry card payment/i })).toBeInTheDocument();
   });
@@ -266,9 +260,7 @@ describe("CybersourceCheckout", () => {
 
     renderPanel();
 
-    expect(
-      await screen.findByText(/did not return a signed result token/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/did not return a signed result token/i)).toBeInTheDocument();
   });
 
   it("surfaces the backend error and never touches the SDK when initiation fails", async () => {
@@ -324,9 +316,7 @@ describe("CybersourceCheckout", () => {
     await waitFor(() => expect(initiateCalls).toBe(1));
     await waitFor(() => {
       script.dispatchEvent(new Event("load"));
-      expect(
-        screen.getByText(/card payment form could not be initialised/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/card payment form could not be initialised/i)).toBeInTheDocument();
     });
     // The retired contract is never constructed.
     expect(staleFactory).not.toHaveBeenCalled();
@@ -377,9 +367,7 @@ describe("CybersourceCheckout", () => {
 
     // While the hosted card form is mounted and awaiting the customer, the
     // panel exposes no pay/retry action — a second flow cannot be started.
-    expect(
-      screen.queryByRole("button", { name: /pay by card|retry card payment/i }),
-    ).toBeNull();
+    expect(screen.queryByRole("button", { name: /pay by card|retry card payment/i })).toBeNull();
 
     // The auto-start effect re-runs on every phase transition but must never
     // trigger a second initiation while the first flow is unresolved.

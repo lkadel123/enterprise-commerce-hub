@@ -268,8 +268,8 @@ function OrderConfirmation({ orderId }: { orderId: string }) {
         <div className="mt-6 rounded-md border p-4">
           <h2 className="text-sm font-medium">Complete your payment</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Pay securely by card with Cybersource Unified Checkout. Retrying uses
-            your existing order — a new order is never created.
+            Pay securely by card with Cybersource Unified Checkout. Retrying uses your existing
+            order — a new order is never created.
           </p>
           <div className="mt-3">
             <CybersourceCheckout orderId={orderId} onSettled={handleSettled} />

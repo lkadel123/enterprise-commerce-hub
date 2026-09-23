@@ -1,10 +1,5 @@
 export type OrderStatus =
-  | "Pending"
-  | "Processing"
-  | "Shipped"
-  | "Delivered"
-  | "Cancelled"
-  | "Refunded";
+  "Pending" | "Processing" | "Shipped" | "Delivered" | "Cancelled" | "Refunded";
 
 export type Order = {
   id: string;
@@ -67,18 +62,56 @@ export const compact = (n: number) =>
   n.toLocaleString("en-US", { notation: "compact", maximumFractionDigits: 1 });
 
 const firstNames = [
-  "Amelia", "Marcus", "Priya", "Daniel", "Sofia", "Liam", "Hannah", "Noah",
-  "Elena", "Jonas", "Yuki", "Omar", "Clara", "Ethan", "Maya", "Victor",
-  "Isabelle", "Andre", "Nina", "Tobias", "Ruth", "Felix", "Aisha", "Peter",
+  "Amelia",
+  "Marcus",
+  "Priya",
+  "Daniel",
+  "Sofia",
+  "Liam",
+  "Hannah",
+  "Noah",
+  "Elena",
+  "Jonas",
+  "Yuki",
+  "Omar",
+  "Clara",
+  "Ethan",
+  "Maya",
+  "Victor",
+  "Isabelle",
+  "Andre",
+  "Nina",
+  "Tobias",
+  "Ruth",
+  "Felix",
+  "Aisha",
+  "Peter",
 ];
 const lastNames = [
-  "Whitfield", "Osei", "Nair", "Brennan", "Marchetti", "Kowalski", "Reyes",
-  "Lindqvist", "Petrov", "Haugen", "Tanaka", "Farouk", "Dubois", "Novak",
-  "Castillo", "Almeida", "Fischer", "Okafor", "Bergman", "Hayes",
+  "Whitfield",
+  "Osei",
+  "Nair",
+  "Brennan",
+  "Marchetti",
+  "Kowalski",
+  "Reyes",
+  "Lindqvist",
+  "Petrov",
+  "Haugen",
+  "Tanaka",
+  "Farouk",
+  "Dubois",
+  "Novak",
+  "Castillo",
+  "Almeida",
+  "Fischer",
+  "Okafor",
+  "Bergman",
+  "Hayes",
 ];
 
 const productCatalog: [string, string, string, number][] = [
-  ["Aurora 27\" 4K Monitor", "Electronics", "Northlight", 549],
+  ['Aurora 27" 4K Monitor', "Electronics", "Northlight", 549],
   ["Vertex Pro Mechanical Keyboard", "Electronics", "Northlight", 189],
   ["Halo Wireless Earbuds Gen 3", "Electronics", "Sonora", 149],
   ["Meridian Laptop Stand", "Electronics", "Kestrel", 79],
@@ -125,13 +158,7 @@ export const brands = [
   "Copperfield",
 ];
 
-export const regions = [
-  "North America",
-  "Europe",
-  "Asia Pacific",
-  "Latin America",
-  "Middle East",
-];
+export const regions = ["North America", "Europe", "Asia Pacific", "Latin America", "Middle East"];
 
 // Deterministic pseudo-random so server and client render identically.
 function rng(seed: number) {
@@ -142,7 +169,7 @@ function rng(seed: number) {
   };
 }
 
-const at = <T,>(a: readonly T[], i: number): T => a[Math.abs(i) % a.length] as T;
+const at = <T>(a: readonly T[], i: number): T => a[Math.abs(i) % a.length] as T;
 
 const pad = (n: number, len = 4) => String(n).padStart(len, "0");
 
@@ -153,12 +180,24 @@ function dateStr(daysAgo: number) {
 }
 
 const orderStatuses: OrderStatus[] = [
-  "Delivered", "Shipped", "Processing", "Pending", "Delivered",
-  "Cancelled", "Delivered", "Refunded", "Shipped", "Processing",
+  "Delivered",
+  "Shipped",
+  "Processing",
+  "Pending",
+  "Delivered",
+  "Cancelled",
+  "Delivered",
+  "Refunded",
+  "Shipped",
+  "Processing",
 ];
 
 const payments: Order["payment"][] = [
-  "Credit Card", "Credit Card", "Digital Wallet", "Cash on Delivery", "Bank Transfer",
+  "Credit Card",
+  "Credit Card",
+  "Digital Wallet",
+  "Cash on Delivery",
+  "Bank Transfer",
 ];
 
 export const orders: Order[] = (() => {
@@ -182,8 +221,7 @@ export const orders: Order[] = (() => {
       date: dateStr(Math.floor(r() * 30)),
       amount: Math.round(p[3] * items * (0.9 + r() * 0.3) * 100) / 100,
       payment: method,
-      paymentStatus:
-        status === "Refunded" ? "Refunded" : status === "Pending" ? "Pending" : "Paid",
+      paymentStatus: status === "Refunded" ? "Refunded" : status === "Pending" ? "Pending" : "Paid",
       ...(provider ? { provider } : {}),
       status,
       region: at(regions, Math.floor(r() * regions.length)),
@@ -192,7 +230,14 @@ export const orders: Order[] = (() => {
 })();
 
 const productStatuses: Product["status"][] = [
-  "Active", "Active", "Active", "Draft", "Active", "Out of Stock", "Active", "Archived",
+  "Active",
+  "Active",
+  "Active",
+  "Draft",
+  "Active",
+  "Out of Stock",
+  "Active",
+  "Archived",
 ];
 
 export const products: Product[] = (() => {
@@ -308,61 +353,330 @@ export const regionSales = [
 ];
 
 export const activityLog = [
-  { user: "Amelia Whitfield", role: "Super Admin", action: "Updated", module: "Catalog", description: "Updated product SKU-1024 pricing to $549.00", ip: "192.168.14.22", time: "2026-08-09 08:42" },
-  { user: "Marcus Osei", role: "Sales Manager", action: "Changed", module: "Orders", description: "Changed order #ORD-10284 status to Shipped", ip: "10.44.2.190", time: "2026-08-09 08:12" },
-  { user: "Priya Nair", role: "Inventory Manager", action: "Adjusted", module: "Inventory", description: "Adjusted stock for SKU-1052 (+120 units, Rotterdam DC)", ip: "10.44.2.77", time: "2026-08-09 07:55" },
-  { user: "Daniel Brennan", role: "Customer Support", action: "Approved", module: "Returns", description: "Approved refund request for order #ORD-10310", ip: "172.16.8.4", time: "2026-08-08 19:31" },
-  { user: "Sofia Marchetti", role: "Marketing Manager", action: "Created", module: "Marketing", description: "Created coupon SUMMER25 (25% off, expires 2026-09-01)", ip: "192.168.14.61", time: "2026-08-08 16:04" },
-  { user: "Liam Kowalski", role: "Content Manager", action: "Published", module: "Content", description: "Published homepage banner 'Autumn Collection'", ip: "192.168.14.9", time: "2026-08-08 14:20" },
-  { user: "Hannah Reyes", role: "Accountant", action: "Exported", module: "Reports", description: "Exported July sales report (CSV, 8,426 rows)", ip: "10.44.2.15", time: "2026-08-08 11:48" },
-  { user: "Noah Lindqvist", role: "Admin", action: "Deleted", module: "Administration", description: "Removed user account t.hansen@company.com", ip: "192.168.14.30", time: "2026-08-07 17:22" },
+  {
+    user: "Amelia Whitfield",
+    role: "Super Admin",
+    action: "Updated",
+    module: "Catalog",
+    description: "Updated product SKU-1024 pricing to $549.00",
+    ip: "192.168.14.22",
+    time: "2026-08-09 08:42",
+  },
+  {
+    user: "Marcus Osei",
+    role: "Sales Manager",
+    action: "Changed",
+    module: "Orders",
+    description: "Changed order #ORD-10284 status to Shipped",
+    ip: "10.44.2.190",
+    time: "2026-08-09 08:12",
+  },
+  {
+    user: "Priya Nair",
+    role: "Inventory Manager",
+    action: "Adjusted",
+    module: "Inventory",
+    description: "Adjusted stock for SKU-1052 (+120 units, Rotterdam DC)",
+    ip: "10.44.2.77",
+    time: "2026-08-09 07:55",
+  },
+  {
+    user: "Daniel Brennan",
+    role: "Customer Support",
+    action: "Approved",
+    module: "Returns",
+    description: "Approved refund request for order #ORD-10310",
+    ip: "172.16.8.4",
+    time: "2026-08-08 19:31",
+  },
+  {
+    user: "Sofia Marchetti",
+    role: "Marketing Manager",
+    action: "Created",
+    module: "Marketing",
+    description: "Created coupon SUMMER25 (25% off, expires 2026-09-01)",
+    ip: "192.168.14.61",
+    time: "2026-08-08 16:04",
+  },
+  {
+    user: "Liam Kowalski",
+    role: "Content Manager",
+    action: "Published",
+    module: "Content",
+    description: "Published homepage banner 'Autumn Collection'",
+    ip: "192.168.14.9",
+    time: "2026-08-08 14:20",
+  },
+  {
+    user: "Hannah Reyes",
+    role: "Accountant",
+    action: "Exported",
+    module: "Reports",
+    description: "Exported July sales report (CSV, 8,426 rows)",
+    ip: "10.44.2.15",
+    time: "2026-08-08 11:48",
+  },
+  {
+    user: "Noah Lindqvist",
+    role: "Admin",
+    action: "Deleted",
+    module: "Administration",
+    description: "Removed user account t.hansen@company.com",
+    ip: "192.168.14.30",
+    time: "2026-08-07 17:22",
+  },
 ];
 
 export const notifications = [
-  { type: "order", title: "New order #ORD-10348", body: "Elena Petrov placed an order for $1,284.00", time: "2 min ago" },
-  { type: "stock", title: "Low stock alert", body: "Halo Wireless Earbuds Gen 3 — 6 units left", time: "18 min ago" },
-  { type: "payment", title: "Payment received", body: "$4,210.00 settled via Fonepay QR payment", time: "1 hr ago" },
-  { type: "refund", title: "Refund requested", body: "Order #ORD-10310 — customer reported damage", time: "3 hrs ago" },
-  { type: "customer", title: "New customer registered", body: "Tobias Bergman joined the Loyalty group", time: "5 hrs ago" },
-  { type: "review", title: "New review pending", body: "4.0★ on Nordic Oak Coffee Table", time: "Yesterday" },
+  {
+    type: "order",
+    title: "New order #ORD-10348",
+    body: "Elena Petrov placed an order for $1,284.00",
+    time: "2 min ago",
+  },
+  {
+    type: "stock",
+    title: "Low stock alert",
+    body: "Halo Wireless Earbuds Gen 3 — 6 units left",
+    time: "18 min ago",
+  },
+  {
+    type: "payment",
+    title: "Payment received",
+    body: "$4,210.00 settled via Fonepay QR payment",
+    time: "1 hr ago",
+  },
+  {
+    type: "refund",
+    title: "Refund requested",
+    body: "Order #ORD-10310 — customer reported damage",
+    time: "3 hrs ago",
+  },
+  {
+    type: "customer",
+    title: "New customer registered",
+    body: "Tobias Bergman joined the Loyalty group",
+    time: "5 hrs ago",
+  },
+  {
+    type: "review",
+    title: "New review pending",
+    body: "4.0★ on Nordic Oak Coffee Table",
+    time: "Yesterday",
+  },
 ];
 
 export const reviews = [
-  { id: "REV-2841", customer: "Elena Petrov", product: "Aurora 27\" 4K Monitor", rating: 5, body: "Colour accuracy out of the box is excellent. Stand feels premium.", date: "2026-08-08", status: "Approved" },
-  { id: "REV-2840", customer: "Omar Farouk", product: "Trailhead Running Shoes", rating: 4, body: "Great grip on wet trails, sizing runs half a size small.", date: "2026-08-08", status: "Pending" },
-  { id: "REV-2839", customer: "Maya Castillo", product: "Silk Renewal Night Cream", rating: 5, body: "Noticeable difference after two weeks. Will reorder.", date: "2026-08-07", status: "Approved" },
-  { id: "REV-2838", customer: "Victor Novak", product: "Cadence Adjustable Dumbbells", rating: 2, body: "Locking mechanism rattles under load.", date: "2026-08-07", status: "Pending" },
-  { id: "REV-2837", customer: "Nina Fischer", product: "Nordic Oak Coffee Table", rating: 4, body: "Beautiful grain, assembly took longer than expected.", date: "2026-08-06", status: "Approved" },
-  { id: "REV-2836", customer: "Andre Dubois", product: "Harvest Organic Coffee 1kg", rating: 1, body: "Bag arrived unsealed.", date: "2026-08-05", status: "Rejected" },
+  {
+    id: "REV-2841",
+    customer: "Elena Petrov",
+    product: 'Aurora 27" 4K Monitor',
+    rating: 5,
+    body: "Colour accuracy out of the box is excellent. Stand feels premium.",
+    date: "2026-08-08",
+    status: "Approved",
+  },
+  {
+    id: "REV-2840",
+    customer: "Omar Farouk",
+    product: "Trailhead Running Shoes",
+    rating: 4,
+    body: "Great grip on wet trails, sizing runs half a size small.",
+    date: "2026-08-08",
+    status: "Pending",
+  },
+  {
+    id: "REV-2839",
+    customer: "Maya Castillo",
+    product: "Silk Renewal Night Cream",
+    rating: 5,
+    body: "Noticeable difference after two weeks. Will reorder.",
+    date: "2026-08-07",
+    status: "Approved",
+  },
+  {
+    id: "REV-2838",
+    customer: "Victor Novak",
+    product: "Cadence Adjustable Dumbbells",
+    rating: 2,
+    body: "Locking mechanism rattles under load.",
+    date: "2026-08-07",
+    status: "Pending",
+  },
+  {
+    id: "REV-2837",
+    customer: "Nina Fischer",
+    product: "Nordic Oak Coffee Table",
+    rating: 4,
+    body: "Beautiful grain, assembly took longer than expected.",
+    date: "2026-08-06",
+    status: "Approved",
+  },
+  {
+    id: "REV-2836",
+    customer: "Andre Dubois",
+    product: "Harvest Organic Coffee 1kg",
+    rating: 1,
+    body: "Bag arrived unsealed.",
+    date: "2026-08-05",
+    status: "Rejected",
+  },
 ];
 
 export const coupons = [
-  { code: "SUMMER25", type: "Percentage", value: "25%", min: 120, max: 80, used: 1842, limit: 5000, start: "2026-06-01", end: "2026-09-01", status: "Active" },
-  { code: "FREESHIP", type: "Free Shipping", value: "—", min: 60, max: 0, used: 4210, limit: 10000, start: "2026-01-01", end: "2026-12-31", status: "Active" },
-  { code: "WELCOME10", type: "Fixed", value: "$10", min: 45, max: 10, used: 928, limit: 2000, start: "2026-03-15", end: "2026-08-31", status: "Active" },
-  { code: "VIP15", type: "Percentage", value: "15%", min: 200, max: 150, used: 316, limit: 500, start: "2026-05-01", end: "2026-08-15", status: "Expiring" },
-  { code: "BLACKFRI", type: "Percentage", value: "40%", min: 80, max: 400, used: 0, limit: 25000, start: "2026-11-25", end: "2026-12-02", status: "Scheduled" },
-  { code: "CLEARANCE5", type: "Fixed", value: "$5", min: 25, max: 5, used: 6710, limit: 6710, start: "2026-02-01", end: "2026-04-30", status: "Expired" },
+  {
+    code: "SUMMER25",
+    type: "Percentage",
+    value: "25%",
+    min: 120,
+    max: 80,
+    used: 1842,
+    limit: 5000,
+    start: "2026-06-01",
+    end: "2026-09-01",
+    status: "Active",
+  },
+  {
+    code: "FREESHIP",
+    type: "Free Shipping",
+    value: "—",
+    min: 60,
+    max: 0,
+    used: 4210,
+    limit: 10000,
+    start: "2026-01-01",
+    end: "2026-12-31",
+    status: "Active",
+  },
+  {
+    code: "WELCOME10",
+    type: "Fixed",
+    value: "$10",
+    min: 45,
+    max: 10,
+    used: 928,
+    limit: 2000,
+    start: "2026-03-15",
+    end: "2026-08-31",
+    status: "Active",
+  },
+  {
+    code: "VIP15",
+    type: "Percentage",
+    value: "15%",
+    min: 200,
+    max: 150,
+    used: 316,
+    limit: 500,
+    start: "2026-05-01",
+    end: "2026-08-15",
+    status: "Expiring",
+  },
+  {
+    code: "BLACKFRI",
+    type: "Percentage",
+    value: "40%",
+    min: 80,
+    max: 400,
+    used: 0,
+    limit: 25000,
+    start: "2026-11-25",
+    end: "2026-12-02",
+    status: "Scheduled",
+  },
+  {
+    code: "CLEARANCE5",
+    type: "Fixed",
+    value: "$5",
+    min: 25,
+    max: 5,
+    used: 6710,
+    limit: 6710,
+    start: "2026-02-01",
+    end: "2026-04-30",
+    status: "Expired",
+  },
 ];
 
 export const roles = [
-  "Super Admin", "Admin", "Manager", "Sales Manager", "Inventory Manager",
-  "Customer Support", "Content Manager", "Marketing Manager", "Accountant",
+  "Super Admin",
+  "Admin",
+  "Manager",
+  "Sales Manager",
+  "Inventory Manager",
+  "Customer Support",
+  "Content Manager",
+  "Marketing Manager",
+  "Accountant",
 ];
 
 export const permissionModules = [
-  "Catalog", "Orders", "Customers", "Inventory", "Marketing", "Reports", "Settings",
+  "Catalog",
+  "Orders",
+  "Customers",
+  "Inventory",
+  "Marketing",
+  "Reports",
+  "Settings",
 ];
 
 export const teamUsers = [
-  { name: "Amelia Whitfield", email: "amelia.w@northpeak.com", role: "Super Admin", status: "Active", lastActive: "2 min ago" },
-  { name: "Marcus Osei", email: "marcus.o@northpeak.com", role: "Sales Manager", status: "Active", lastActive: "12 min ago" },
-  { name: "Priya Nair", email: "priya.n@northpeak.com", role: "Inventory Manager", status: "Active", lastActive: "1 hr ago" },
-  { name: "Daniel Brennan", email: "daniel.b@northpeak.com", role: "Customer Support", status: "Active", lastActive: "3 hrs ago" },
-  { name: "Sofia Marchetti", email: "sofia.m@northpeak.com", role: "Marketing Manager", status: "Active", lastActive: "Yesterday" },
-  { name: "Liam Kowalski", email: "liam.k@northpeak.com", role: "Content Manager", status: "Invited", lastActive: "—" },
-  { name: "Hannah Reyes", email: "hannah.r@northpeak.com", role: "Accountant", status: "Active", lastActive: "2 days ago" },
-  { name: "Noah Lindqvist", email: "noah.l@northpeak.com", role: "Admin", status: "Suspended", lastActive: "3 weeks ago" },
+  {
+    name: "Amelia Whitfield",
+    email: "amelia.w@northpeak.com",
+    role: "Super Admin",
+    status: "Active",
+    lastActive: "2 min ago",
+  },
+  {
+    name: "Marcus Osei",
+    email: "marcus.o@northpeak.com",
+    role: "Sales Manager",
+    status: "Active",
+    lastActive: "12 min ago",
+  },
+  {
+    name: "Priya Nair",
+    email: "priya.n@northpeak.com",
+    role: "Inventory Manager",
+    status: "Active",
+    lastActive: "1 hr ago",
+  },
+  {
+    name: "Daniel Brennan",
+    email: "daniel.b@northpeak.com",
+    role: "Customer Support",
+    status: "Active",
+    lastActive: "3 hrs ago",
+  },
+  {
+    name: "Sofia Marchetti",
+    email: "sofia.m@northpeak.com",
+    role: "Marketing Manager",
+    status: "Active",
+    lastActive: "Yesterday",
+  },
+  {
+    name: "Liam Kowalski",
+    email: "liam.k@northpeak.com",
+    role: "Content Manager",
+    status: "Invited",
+    lastActive: "—",
+  },
+  {
+    name: "Hannah Reyes",
+    email: "hannah.r@northpeak.com",
+    role: "Accountant",
+    status: "Active",
+    lastActive: "2 days ago",
+  },
+  {
+    name: "Noah Lindqvist",
+    email: "noah.l@northpeak.com",
+    role: "Admin",
+    status: "Suspended",
+    lastActive: "3 weeks ago",
+  },
 ];
 
 export const categoryRows = categories.map((name, i) => ({

@@ -218,8 +218,7 @@ const paymentService = {
           ? verification.metadata.currency.toUpperCase()
           : null;
       const expectedCurrency =
-        existingOrder.payment.currency?.toUpperCase() ||
-        env.PAYMENT_DEFAULT_CURRENCY.toUpperCase();
+        existingOrder.payment.currency?.toUpperCase() || env.PAYMENT_DEFAULT_CURRENCY.toUpperCase();
       if (sessionCurrency && sessionCurrency !== expectedCurrency) {
         logger.warn(
           { orderId, transactionId: providerTransactionId, sessionCurrency, expectedCurrency },

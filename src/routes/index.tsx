@@ -38,13 +38,39 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-const chartColors = ["var(--color-chart-1)", "var(--color-chart-2)", "var(--color-chart-3)", "var(--color-chart-4)", "var(--color-chart-5)", "var(--color-chart-6)"];
+const chartColors = [
+  "var(--color-chart-1)",
+  "var(--color-chart-2)",
+  "var(--color-chart-3)",
+  "var(--color-chart-4)",
+  "var(--color-chart-5)",
+  "var(--color-chart-6)",
+];
 
-const tooltipStyle = { backgroundColor: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: "8px", fontSize: "12px", color: "var(--color-popover-foreground)", boxShadow: "var(--shadow-overlay)" };
+type TooltipPayload = {
+  payload: {
+    label?: string;
+    key?: string;
+  };
+  value?: number | string;
+};
+
+const tooltipStyle = {
+  backgroundColor: "var(--color-popover)",
+  border: "1px solid var(--color-border)",
+  borderRadius: "8px",
+  fontSize: "12px",
+  color: "var(--color-popover-foreground)",
+  boxShadow: "var(--shadow-overlay)",
+};
 
 type RangeKey = "7d" | "30d" | "90d";
 const RANGE_DAYS: Record<RangeKey, number> = { "7d": 7, "30d": 30, "90d": 90 };
-const RANGE_LABEL: Record<RangeKey, string> = { "7d": "Last 7 days", "30d": "Last 30 days", "90d": "Last 90 days" };
+const RANGE_LABEL: Record<RangeKey, string> = {
+  "7d": "Last 7 days",
+  "30d": "Last 30 days",
+  "90d": "Last 90 days",
+};
 
 function rangeWindow(range: RangeKey): { from: string; to: string } {
   const to = new Date();
@@ -53,7 +79,13 @@ function rangeWindow(range: RangeKey): { from: string; to: string } {
 }
 
 function ChartSkeleton({ height = 208 }: { height?: number }) {
-  return <div className="animate-pulse rounded-md bg-surface-muted" style={{ height }} aria-busy="true" />;
+  return (
+    <div
+      className="animate-pulse rounded-md bg-surface-muted"
+      style={{ height }}
+      aria-busy="true"
+    />
+  );
 }
 
 function SectionError({ error }: { error: unknown }) {
@@ -64,13 +96,23 @@ function SectionError({ error }: { error: unknown }) {
         {status === 403 ? "Access denied" : "Couldn't load this data"}
       </p>
       <p className="text-xs text-muted-foreground">
-        {status === 403 ? "Your role does not include permission to view reports." : "Check your connection and try again."}
+        {status === 403
+          ? "Your role does not include permission to view reports."
+          : "Check your connection and try again."}
       </p>
     </div>
   );
 }
 
-function PermissionWrapper({ mod, children, fallback }: { mod: PermissionModule; children: ReactNode; fallback?: ReactNode }) {
+function PermissionWrapper({
+  mod,
+  children,
+  fallback,
+}: {
+  mod: PermissionModule;
+  children: ReactNode;
+  fallback?: ReactNode;
+}) {
   const { permissions } = useAdminAuth();
   const allowed = permissions.some((p) => p.module === mod);
   if (!allowed) return <>{fallback ?? <PermissionDenied feature={`view of ${mod} reports`} />}</>;
@@ -87,7 +129,7 @@ function TableSkeleton({ rows = 5 }: { rows?: number }) {
   );
 }
 
-function CustomTooltip({ active, payload }: { active?: boolean; payload?: any[] }) {
+function CustomTooltip({ active, payload }: { active?: boolean; payload?: TooltipPayload[] }) {
   if (active && payload?.[0]) {
     return (
       <div style={tooltipStyle}>
@@ -104,7 +146,12 @@ function LegendWrapper({ data }: { data: [string, number][] }) {
     <div className="flex flex-wrap gap-2 justify-center">
       {data.map(([label, val], i) => (
         <span key={label} className="flex items-center gap-1.5 text-xs">
-          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: i % 2 === 0 ? "var(--color-chart-1)" : "var(--color-chart-2)" }} />
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{
+              backgroundColor: i % 2 === 0 ? "var(--color-chart-1)" : "var(--color-chart-2)",
+            }}
+          />
           {label}: {val}%
         </span>
       ))}
@@ -128,7 +175,10 @@ export default function Dashboard() {
 
   const orders = recentOrders.data?.data ?? [];
   const revenuePoints = revenue.data ?? [];
-  const rangeRevenue = revenuePoints.reduce((sum, p) => sum + (Number.isFinite(p.revenue) ? p.revenue : 0), 0);
+  const rangeRevenue = revenuePoints.reduce(
+    (sum, p) => sum + (Number.isFinite(p.revenue) ? p.revenue : 0),
+    0,
+  );
   const lowStockRows = (inventory.data ?? [])
     .filter((i) => i.status === "Out of Stock" || i.status === "Low Stock")
     .slice(0, 5);
@@ -174,11 +224,23 @@ export default function Dashboard() {
         />
       </div>
 
-      <PermissionWrapper mod="reports" fallback={<Section title="Reports"><EmptyState title="No access" description="Your role does not include permission to view reports." /></Section>}>
+      <PermissionWrapper
+        mod="reports"
+        fallback={
+          <Section title="Reports">
+            <EmptyState
+              title="No access"
+              description="Your role does not include permission to view reports."
+            />
+          </Section>
+        }
+      >
         <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-3">
           <Section
             title={`Revenue - ${RANGE_LABEL[range]}`}
-            description={overview.isLoading ? "" : `${formatNpr(rangeRevenue)} in paid revenue for this window`}
+            description={
+              overview.isLoading ? "" : `${formatNpr(rangeRevenue)} in paid revenue for this window`
+            }
             className="xl:col-span-2"
           >
             {revenue.isLoading ? (
@@ -186,7 +248,10 @@ export default function Dashboard() {
             ) : revenue.isError ? (
               <SectionError error={revenue.error} />
             ) : revenuePoints.length === 0 ? (
-              <EmptyState title="No revenue yet" description="Paid orders in this window will appear here." />
+              <EmptyState
+                title="No revenue yet"
+                description="Paid orders in this window will appear here."
+              />
             ) : (
               <ResponsiveContainer width="100%" height={224}>
                 <AreaChart data={revenuePoints} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
@@ -196,11 +261,33 @@ export default function Dashboard() {
                       <stop offset="100%" stopColor="var(--color-chart-1)" stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                  <XAxis dataKey="label" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} minTickGap={24} />
-                  <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={formatNprCompact} width={64} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="var(--color-border)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    minTickGap={24}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={formatNprCompact}
+                    width={64}
+                  />
                   <RTooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="revenue" stroke="var(--color-chart-1)" strokeWidth={1.8} fill="url(#rev-grad)" />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="var(--color-chart-1)"
+                    strokeWidth={1.8}
+                    fill="url(#rev-grad)"
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -212,7 +299,10 @@ export default function Dashboard() {
             ) : paymentMethods.isError ? (
               <SectionError error={paymentMethods.error} />
             ) : (paymentMethods.data ?? []).length === 0 ? (
-              <EmptyState title="No payments yet" description="Payment share appears once orders are paid." />
+              <EmptyState
+                title="No payments yet"
+                description="Payment share appears once orders are paid."
+              />
             ) : (
               <div className="flex flex-col gap-4">
                 <div className="h-40">
@@ -235,7 +325,11 @@ export default function Dashboard() {
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <LegendWrapper data={(paymentMethods.data ?? []).map((m) => [m.method, Math.round(m.share)] as [string, number])} />
+                <LegendWrapper
+                  data={(paymentMethods.data ?? []).map(
+                    (m) => [m.method, Math.round(m.share)] as [string, number],
+                  )}
+                />
               </div>
             )}
           </Section>
@@ -248,21 +342,31 @@ export default function Dashboard() {
             ) : categorySales.isError ? (
               <SectionError error={categorySales.error} />
             ) : (categorySales.data ?? []).length === 0 ? (
-              <EmptyState title="No category sales yet" description="Paid orders will populate this breakdown." />
+              <EmptyState
+                title="No category sales yet"
+                description="Paid orders will populate this breakdown."
+              />
             ) : (
               <ul className="space-y-3">
                 {(categorySales.data ?? []).map((c) => (
-                  <li key={c.category} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                  <li
+                    key={c.category}
+                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3"
+                  >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{c.category}</p>
                       <div className="mt-1.5 h-1.5 w-full rounded-full bg-surface-muted">
                         <div
                           className="h-1.5 rounded-full bg-[var(--color-chart-1)]"
-                          style={{ width: `${Math.max(4, Math.round((c.value / maxCategoryValue) * 100))}%` }}
+                          style={{
+                            width: `${Math.max(4, Math.round((c.value / maxCategoryValue) * 100))}%`,
+                          }}
                         />
                       </div>
                     </div>
-                    <span className="num text-sm text-muted-foreground">{formatNprCompact(c.value)}</span>
+                    <span className="num text-sm text-muted-foreground">
+                      {formatNprCompact(c.value)}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -275,7 +379,10 @@ export default function Dashboard() {
             ) : topProducts.isError ? (
               <SectionError error={topProducts.error} />
             ) : (topProducts.data ?? []).length === 0 ? (
-              <EmptyState title="No sales yet" description="Best sellers appear once orders are paid." />
+              <EmptyState
+                title="No sales yet"
+                description="Best sellers appear once orders are paid."
+              />
             ) : (
               <table className="w-full text-sm">
                 <thead>
@@ -312,14 +419,22 @@ export default function Dashboard() {
           >
             <PermissionWrapper
               mod="inventory"
-              fallback={<EmptyState title="No access" description="Your role does not include inventory permission." />}
+              fallback={
+                <EmptyState
+                  title="No access"
+                  description="Your role does not include inventory permission."
+                />
+              }
             >
               {inventory.isLoading ? (
                 <TableSkeleton rows={4} />
               ) : inventory.isError ? (
                 <SectionError error={inventory.error} />
               ) : lowStockRows.length === 0 ? (
-                <EmptyState title="All stocked" description="No items are below their reorder level." />
+                <EmptyState
+                  title="All stocked"
+                  description="No items are below their reorder level."
+                />
               ) : (
                 <ul className="divide-y">
                   {lowStockRows.map((row) => (
@@ -353,41 +468,69 @@ export default function Dashboard() {
         >
           <PermissionWrapper
             mod="orders"
-            fallback={<div className="p-6"><EmptyState title="No access" description="Your role does not include order permission." /></div>}
+            fallback={
+              <div className="p-6">
+                <EmptyState
+                  title="No access"
+                  description="Your role does not include order permission."
+                />
+              </div>
+            }
           >
             {recentOrders.isLoading ? (
-              <div className="p-4"><TableSkeleton rows={5} /></div>
+              <div className="p-4">
+                <TableSkeleton rows={5} />
+              </div>
             ) : recentOrders.isError ? (
               <SectionError error={recentOrders.error} />
             ) : orders.length === 0 ? (
-              <EmptyState title="No orders yet" description="Storefront orders will appear here in real time." />
+              <EmptyState
+                title="No orders yet"
+                description="Storefront orders will appear here in real time."
+              />
             ) : (
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-label text-muted-foreground">
                     <th className="px-4 py-2.5 font-medium sm:px-5">Order</th>
                     <th className="px-4 py-2.5 font-medium sm:px-5">Customer</th>
-                    <th className="hidden px-4 py-2.5 text-right font-medium sm:table-cell sm:px-5">Items</th>
+                    <th className="hidden px-4 py-2.5 text-right font-medium sm:table-cell sm:px-5">
+                      Items
+                    </th>
                     <th className="px-4 py-2.5 text-right font-medium sm:px-5">Total</th>
                     <th className="px-4 py-2.5 font-medium sm:px-5">Status</th>
-                    <th className="hidden px-4 py-2.5 font-medium sm:table-cell sm:px-5">Payment</th>
+                    <th className="hidden px-4 py-2.5 font-medium sm:table-cell sm:px-5">
+                      Payment
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {orders.map((o) => (
                     <tr key={o.id} className="border-b last:border-0">
                       <td className="px-4 py-2.5 sm:px-5">
-                        <Link to="/orders/$orderId" params={{ orderId: o.id }} className="num font-medium hover:underline">
+                        <Link
+                          to="/orders/$orderId"
+                          params={{ orderId: o.id }}
+                          className="num font-medium hover:underline"
+                        >
                           {o.orderNumber}
                         </Link>
                       </td>
-                      <td className="max-w-[180px] truncate px-4 py-2.5 sm:px-5">{o.customer?.name ?? o.email}</td>
+                      <td className="max-w-[180px] truncate px-4 py-2.5 sm:px-5">
+                        {o.customer?.name ?? o.email}
+                      </td>
                       <td className="num hidden px-4 py-2.5 text-right sm:table-cell sm:px-5">
                         {o.items.reduce((n, it) => n + it.qty, 0)}
                       </td>
-                      <td className="num px-4 py-2.5 text-right sm:px-5">{formatNpr(o.amounts.total)}</td>
-                      <td className="px-4 py-2.5 sm:px-5"><StatusBadge status={o.status} /></td>
-                      <td className="hidden px-4 py-2.5 sm:table-cell sm:px-5"><StatusBadge status={o.payment.status} /></td>
+                      <td className="num px-4 py-2.5 text-right sm:px-5">
+                        {formatNpr(o.amounts.total)}
+                      </td>
+                      <td className="px-4 py-2.5 sm:px-5">
+                        <StatusBadge status={o.status} />
+                      </td>
+                      <td className="hidden px-4 py-2.5 sm:table-cell sm:px-5">
+                        <StatusBadge status={o.payment.status} />
+                      </td>
                     </tr>
                   ))}
                 </tbody>

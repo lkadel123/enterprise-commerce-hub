@@ -18,9 +18,7 @@ export const MAX_GALLERY_IMAGES = 4;
  * Every component that renders product imagery consumes this helper so the
  * image-index logic lives in exactly one place.
  */
-export function normalizeProductImages(
-  images: ProductImage[] | null | undefined,
-): ProductImage[] {
+export function normalizeProductImages(images: ProductImage[] | null | undefined): ProductImage[] {
   if (!Array.isArray(images)) return [];
 
   const seen = new Set<string>();
@@ -40,8 +38,6 @@ export function normalizeProductImages(
 }
 
 /** First usable display image (or `undefined` when the product has none). */
-export function leadImage(
-  images: ProductImage[] | null | undefined,
-): ProductImage | undefined {
+export function leadImage(images: ProductImage[] | null | undefined): ProductImage | undefined {
   return normalizeProductImages(images)[0];
 }

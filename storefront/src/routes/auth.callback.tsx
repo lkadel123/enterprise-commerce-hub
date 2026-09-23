@@ -62,8 +62,7 @@ const SOCIAL_AUTH_ERROR_MESSAGE: Record<SocialAuthErrorCode, string> = {
   account_suspended: "This account is not active. Contact support for help.",
   account_conflict:
     "This social account is already linked to another customer. Sign in with your email and password.",
-  provider_unavailable:
-    "The sign-in provider is temporarily unavailable. Please try again later.",
+  provider_unavailable: "The sign-in provider is temporarily unavailable. Please try again later.",
 };
 
 function isSocialAuthError(value: unknown): value is SocialAuthErrorCode {
@@ -164,8 +163,8 @@ function AuthCallbackPage() {
         <div className="w-full max-w-md">
           <h1 className="text-center text-display">Almost done — one more step</h1>
           <p className="mt-3 text-center text-sm text-muted-foreground">
-            To finish creating your account, please review and accept our Terms &amp;
-            Conditions and Privacy Policy.
+            To finish creating your account, please review and accept our Terms &amp; Conditions and
+            Privacy Policy.
           </p>
           <form onSubmit={handleConsentSubmit} noValidate className="mt-6">
             <div className="flex items-start gap-3 rounded-md border border-border bg-card px-4 py-3">

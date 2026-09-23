@@ -45,7 +45,13 @@ function CategoryForm({
 }: {
   category?: CategoryDto;
   parents: CategoryDto[];
-  onSubmit: (values: { name: string; parentId: string | null; description: string; sort: number; status: "Active" | "Hidden" }) => void;
+  onSubmit: (values: {
+    name: string;
+    parentId: string | null;
+    description: string;
+    sort: number;
+    status: "Active" | "Hidden";
+  }) => void;
   submitting: boolean;
 }) {
   const [name, setName] = useState(category?.name ?? "");
@@ -57,34 +63,60 @@ function CategoryForm({
     <div className="space-y-4">
       <div className="space-y-1.5">
         <Label className="text-xs">Category name</Label>
-        <Input value={name} onChange={(e) => setName(e.target.value)} className="h-9" placeholder="Home & Living" />
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="h-9"
+          placeholder="Home & Living"
+        />
       </div>
       <div className="space-y-1.5">
         <Label className="text-xs">Parent category</Label>
         <Select value={parentId} onValueChange={setParentId}>
-          <SelectTrigger className="h-9"><SelectValue placeholder="None (top level)" /></SelectTrigger>
+          <SelectTrigger className="h-9">
+            <SelectValue placeholder="None (top level)" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">None (top level)</SelectItem>
-            {parents.filter((p) => p.id !== category?.id).map((p) => (
-              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-            ))}
+            {parents
+              .filter((p) => p.id !== category?.id)
+              .map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>
       <div className="space-y-1.5">
         <Label className="text-xs">Description</Label>
-        <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short description shown on the category page." />
+        <Textarea
+          rows={3}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Short description shown on the category page."
+        />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs">Sort order</Label>
-          <Input className="num h-9" value={sort} onChange={(e) => setSort(e.target.value)} placeholder="1" />
+          <Input
+            className="num h-9"
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            placeholder="1"
+          />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Status</Label>
           <Select value={status} onValueChange={(v) => setStatus(v as "Active" | "Hidden")}>
-            <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Hidden">Hidden</SelectItem></SelectContent>
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Active">Active</SelectItem>
+              <SelectItem value="Hidden">Hidden</SelectItem>
+            </SelectContent>
           </Select>
         </div>
       </div>
@@ -115,7 +147,8 @@ export const Route = createFileRoute("/categories")({
       { title: "Categories — Northpeak Commerce Console" },
       {
         name: "description",
-        content: "Create, order and publish catalog categories with parent hierarchy and product counts.",
+        content:
+          "Create, order and publish catalog categories with parent hierarchy and product counts.",
       },
       { property: "og:title", content: "Categories — Northpeak Commerce Console" },
       { property: "og:description", content: "Category CRUD for enterprise e-commerce catalogs." },
@@ -163,22 +196,23 @@ function CategoriesPage() {
         actions={
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="h-9"><Plus className="h-4 w-4" /> New category</Button>
+              <Button size="sm" className="h-9">
+                <Plus className="h-4 w-4" /> New category
+              </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create category</DialogTitle>
-                <DialogDescription>Categories appear in storefront navigation and filters.</DialogDescription>
+                <DialogDescription>
+                  Categories appear in storefront navigation and filters.
+                </DialogDescription>
               </DialogHeader>
               <CategoryForm
                 parents={allRows}
                 submitting={createCategory.isPending}
                 onSubmit={(values) => {
                   act(
-                    () =>
-                      createCategory
-                        .mutateAsync(values)
-                        .then(() => setCreateOpen(false)),
+                    () => createCategory.mutateAsync(values).then(() => setCreateOpen(false)),
                     "Category created",
                   );
                 }}
@@ -192,10 +226,21 @@ function CategoriesPage() {
         <div className="flex items-center gap-3 border-b p-3">
           <div className="relative w-full max-w-sm">
             <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search categories..." className="h-9 pl-9" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search categories..."
+              className="h-9 pl-9"
+            />
           </div>
           {selected.length > 0 && (
-            <Button variant="outline" size="sm" className="ml-auto h-9" disabled={updateCategory.isPending} onClick={bulkHide}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto h-9"
+              disabled={updateCategory.isPending}
+              onClick={bulkHide}
+            >
               Hide {selected.length} selected
             </Button>
           )}
@@ -216,62 +261,84 @@ function CategoriesPage() {
             </thead>
             <tbody>
               {categoriesQuery.isPending ? (
-                <tr><td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">Loading categories…</td></tr>
-              ) : categoriesQuery.isError ? (
-                <tr><td colSpan={8} className="px-4 py-10 text-center text-sm text-destructive">Couldn't load categories. Check your connection and try again.</td></tr>
-              ) : rows.length === 0 ? (
-                <tr><td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">No categories found.</td></tr>
-              ) : (
-              rows.map((c) => (
-                <tr key={c.id} className="border-t transition-colors hover:bg-surface-muted/50">
-                  <td className="px-4 py-2.5">
-                    <Checkbox
-                      checked={selected.includes(c.id)}
-                      onCheckedChange={(v) => setSelected((s) => (v ? [...s, c.id] : s.filter((x) => x !== c.id)))}
-                      aria-label={`Select ${c.name}`}
-                    />
-                  </td>
-                  <td className="px-4 py-2.5 font-medium whitespace-nowrap">{c.name}</td>
-                  <td className="px-4 py-2.5 text-muted-foreground">{c.parent?.name ?? "—"}</td>
-                  <td className="max-w-72 truncate px-4 py-2.5 text-muted-foreground">{c.description ?? "—"}</td>
-                  <td className="num px-4 py-2.5 text-right">{c.productCount}</td>
-                  <td className="num px-4 py-2.5 text-right text-muted-foreground">{c.sort}</td>
-                  <td className="px-4 py-2.5"><StatusBadge status={c.status} /></td>
-                  <td className="px-4 py-2.5 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={() => setEditing(c)}>
-                          <Pencil className="h-4 w-4" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onSelect={() =>
-                            act(
-                              () =>
-                                updateCategory.mutateAsync({
-                                  id: c.id,
-                                  body: { status: c.status === "Active" ? "Hidden" : "Active" },
-                                }),
-                              c.status === "Active" ? "Category hidden" : "Category made active",
-                            )
-                          }
-                        >
-                          {c.status === "Active" ? "Hide" : "Make active"}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onSelect={() => act(() => removeCategory.mutateAsync(c.id), "Category deleted")}
-                        >
-                          <Trash2 className="h-4 w-4" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                <tr>
+                  <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    Loading categories…
                   </td>
                 </tr>
-              ))
+              ) : categoriesQuery.isError ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-10 text-center text-sm text-destructive">
+                    Couldn't load categories. Check your connection and try again.
+                  </td>
+                </tr>
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    No categories found.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((c) => (
+                  <tr key={c.id} className="border-t transition-colors hover:bg-surface-muted/50">
+                    <td className="px-4 py-2.5">
+                      <Checkbox
+                        checked={selected.includes(c.id)}
+                        onCheckedChange={(v) =>
+                          setSelected((s) => (v ? [...s, c.id] : s.filter((x) => x !== c.id)))
+                        }
+                        aria-label={`Select ${c.name}`}
+                      />
+                    </td>
+                    <td className="px-4 py-2.5 font-medium whitespace-nowrap">{c.name}</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">{c.parent?.name ?? "—"}</td>
+                    <td className="max-w-72 truncate px-4 py-2.5 text-muted-foreground">
+                      {c.description ?? "—"}
+                    </td>
+                    <td className="num px-4 py-2.5 text-right">{c.productCount}</td>
+                    <td className="num px-4 py-2.5 text-right text-muted-foreground">{c.sort}</td>
+                    <td className="px-4 py-2.5">
+                      <StatusBadge status={c.status} />
+                    </td>
+                    <td className="px-4 py-2.5 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onSelect={() => setEditing(c)}>
+                            <Pencil className="h-4 w-4" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() =>
+                              act(
+                                () =>
+                                  updateCategory.mutateAsync({
+                                    id: c.id,
+                                    body: { status: c.status === "Active" ? "Hidden" : "Active" },
+                                  }),
+                                c.status === "Active" ? "Category hidden" : "Category made active",
+                              )
+                            }
+                          >
+                            {c.status === "Active" ? "Hide" : "Make active"}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onSelect={() =>
+                              act(() => removeCategory.mutateAsync(c.id), "Category deleted")
+                            }
+                          >
+                            <Trash2 className="h-4 w-4" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>

@@ -43,7 +43,12 @@ function BrandForm({
     <div className="space-y-4">
       <div className="space-y-1.5">
         <Label className="text-xs">Brand name</Label>
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Aurora Audio" className="h-9" />
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Aurora Audio"
+          className="h-9"
+        />
       </div>
       <div className="space-y-1.5">
         <Label className="text-xs">Description</Label>
@@ -73,10 +78,14 @@ export const Route = createFileRoute("/brands")({
       { title: "Brands — Northpeak Commerce Console" },
       {
         name: "description",
-        content: "Manage supplier brands, logos, descriptions and product counts across the catalog.",
+        content:
+          "Manage supplier brands, logos, descriptions and product counts across the catalog.",
       },
       { property: "og:title", content: "Brands — Northpeak Commerce Console" },
-      { property: "og:description", content: "Brand management for enterprise e-commerce catalogs." },
+      {
+        property: "og:description",
+        content: "Brand management for enterprise e-commerce catalogs.",
+      },
     ],
   }),
   component: BrandsPage,
@@ -86,7 +95,9 @@ function BrandsPage() {
   const [query, setQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<BrandDto | null>(null);
-  const brandsQuery = brandsApi.useList(query.trim() ? { q: query.trim(), pageSize: 100 } : { pageSize: 100 });
+  const brandsQuery = brandsApi.useList(
+    query.trim() ? { q: query.trim(), pageSize: 100 } : { pageSize: 100 },
+  );
   const createBrand = brandsApi.useCreate();
   const updateBrand = brandsApi.useUpdate();
   const removeBrand = brandsApi.useRemove();
@@ -107,17 +118,24 @@ function BrandsPage() {
         actions={
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="h-9"><Plus className="h-4 w-4" /> New brand</Button>
+              <Button size="sm" className="h-9">
+                <Plus className="h-4 w-4" /> New brand
+              </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create brand</DialogTitle>
-                <DialogDescription>Brands are instantly available to products and storefront filters.</DialogDescription>
+                <DialogDescription>
+                  Brands are instantly available to products and storefront filters.
+                </DialogDescription>
               </DialogHeader>
               <BrandForm
                 submitting={createBrand.isPending}
                 onSubmit={(values) => {
-                  act(() => createBrand.mutateAsync(values).then(() => setCreateOpen(false)), "Brand created");
+                  act(
+                    () => createBrand.mutateAsync(values).then(() => setCreateOpen(false)),
+                    "Brand created",
+                  );
                 }}
               />
             </DialogContent>
@@ -128,7 +146,12 @@ function BrandsPage() {
       <div className="mb-4 max-w-sm">
         <div className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search brands..." className="h-9 pl-9" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search brands..."
+            className="h-9 pl-9"
+          />
         </div>
       </div>
 
@@ -139,63 +162,77 @@ function BrandsPage() {
           ))}
         </div>
       ) : brandsQuery.isError ? (
-        <EmptyState title="Couldn't load brands" description="Check your connection and try again." />
+        <EmptyState
+          title="Couldn't load brands"
+          description="Check your connection and try again."
+        />
       ) : rows.length === 0 ? (
-        <EmptyState title="No brands found" description={query ? "Try a different search term." : "Create your first brand to get started."} />
+        <EmptyState
+          title="No brands found"
+          description={
+            query ? "Try a different search term." : "Create your first brand to get started."
+          }
+        />
       ) : (
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {rows.map((b) => (
-          <div key={b.id} className="card-surface p-4 transition-shadow hover:shadow-raised">
-            <div className="flex items-start gap-3">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md border bg-surface-muted text-muted-foreground">
-                <Boxes className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-semibold">{b.name}</p>
-                  <StatusBadge status={b.status} />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {rows.map((b) => (
+            <div key={b.id} className="card-surface p-4 transition-shadow hover:shadow-raised">
+              <div className="flex items-start gap-3">
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md border bg-surface-muted text-muted-foreground">
+                  <Boxes className="h-5 w-5" />
                 </div>
-                {b.description && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{b.description}</p>}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-semibold">{b.name}</p>
+                    <StatusBadge status={b.status} />
+                  </div>
+                  {b.description && (
+                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                      {b.description}
+                    </p>
+                  )}
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={() => setEditing(b)}>
+                      <Pencil className="h-4 w-4" /> Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() =>
+                        act(
+                          () =>
+                            updateBrand.mutateAsync({
+                              id: b.id,
+                              body: { status: b.status === "Active" ? "Hidden" : "Active" },
+                            }),
+                          b.status === "Active" ? "Brand hidden" : "Brand made active",
+                        )
+                      }
+                    >
+                      {b.status === "Active" ? "Hide brand" : "Make active"}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onSelect={() => act(() => removeBrand.mutateAsync(b.id), "Brand deleted")}
+                    >
+                      <Trash2 className="h-4 w-4" /> Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><MoreHorizontal className="h-4 w-4" /></Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => setEditing(b)}>
-                    <Pencil className="h-4 w-4" /> Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() =>
-                      act(
-                        () =>
-                          updateBrand.mutateAsync({
-                            id: b.id,
-                            body: { status: b.status === "Active" ? "Hidden" : "Active" },
-                          }),
-                        b.status === "Active" ? "Brand hidden" : "Brand made active",
-                      )
-                    }
-                  >
-                    {b.status === "Active" ? "Hide brand" : "Make active"}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onSelect={() => act(() => removeBrand.mutateAsync(b.id), "Brand deleted")}
-                  >
-                    <Trash2 className="h-4 w-4" /> Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="mt-3 flex items-center justify-between border-t pt-3 text-xs">
+                <span className="text-muted-foreground">Products</span>
+                <span className="num font-semibold">{b.productCount}</span>
+              </div>
             </div>
-            <div className="mt-3 flex items-center justify-between border-t pt-3 text-xs">
-              <span className="text-muted-foreground">Products</span>
-              <span className="num font-semibold">{b.productCount}</span>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
       )}
 
       <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
@@ -209,7 +246,13 @@ function BrandsPage() {
               brand={editing}
               submitting={updateBrand.isPending}
               onSubmit={(values) => {
-                act(() => updateBrand.mutateAsync({ id: editing.id, body: values }).then(() => setEditing(null)), "Brand updated");
+                act(
+                  () =>
+                    updateBrand
+                      .mutateAsync({ id: editing.id, body: values })
+                      .then(() => setEditing(null)),
+                  "Brand updated",
+                );
               }}
             />
           )}

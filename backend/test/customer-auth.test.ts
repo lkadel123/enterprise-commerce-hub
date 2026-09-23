@@ -25,9 +25,12 @@ describe("Customer authentication", () => {
   });
 
   it("registers a customer and sets an httpOnly refresh cookie", async () => {
-    const res = await request(app)
-      .post("/api/v1/auth/customer/register")
-      .send({ name: "Ada Lovelace", email: "ada@test.com", password: TEST_PASSWORD, acceptedTerms: true });
+    const res = await request(app).post("/api/v1/auth/customer/register").send({
+      name: "Ada Lovelace",
+      email: "ada@test.com",
+      password: TEST_PASSWORD,
+      acceptedTerms: true,
+    });
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
@@ -54,14 +57,12 @@ describe("Customer authentication", () => {
 
   it("records terms acceptance (timestamp + version) on registration", async () => {
     const { CURRENT_TERMS_VERSION } = await import("../src/constants/terms.js");
-    const res = await request(app)
-      .post("/api/v1/auth/customer/register")
-      .send({
-        name: "Terms User",
-        email: "terms@test.com",
-        password: TEST_PASSWORD,
-        acceptedTerms: true,
-      });
+    const res = await request(app).post("/api/v1/auth/customer/register").send({
+      name: "Terms User",
+      email: "terms@test.com",
+      password: TEST_PASSWORD,
+      acceptedTerms: true,
+    });
 
     expect(res.status).toBe(201);
     const account = await CustomerAccountModel.findOne({ email: "terms@test.com" }).lean().exec();
@@ -81,14 +82,12 @@ describe("Customer authentication", () => {
   });
 
   it("rejects registration when acceptedTerms is false", async () => {
-    const res = await request(app)
-      .post("/api/v1/auth/customer/register")
-      .send({
-        name: "False Terms",
-        email: "falseterms@test.com",
-        password: TEST_PASSWORD,
-        acceptedTerms: false,
-      });
+    const res = await request(app).post("/api/v1/auth/customer/register").send({
+      name: "False Terms",
+      email: "falseterms@test.com",
+      password: TEST_PASSWORD,
+      acceptedTerms: false,
+    });
 
     expect(res.status).toBe(422);
     expect(await CustomerAccountModel.countDocuments({ email: "falseterms@test.com" })).toBe(0);
@@ -215,9 +214,7 @@ describe("Customer authentication", () => {
       : res.headers["set-cookie"]
         ? [res.headers["set-cookie"]]
         : [];
-    const hint = refreshedCookies.find((c: string) =>
-      c.startsWith("customer_session_hint="),
-    );
+    const hint = refreshedCookies.find((c: string) => c.startsWith("customer_session_hint="));
     expect(hint).toBeTruthy();
     expect(hint).not.toContain("HttpOnly");
   });
@@ -291,9 +288,12 @@ describe("Customer authentication", () => {
 
   it("updates the customer profile via PATCH /account/profile", async () => {
     // Register links the account to a CRM Customer, so profile writes land there.
-    const registerRes = await request(app)
-      .post("/api/v1/auth/customer/register")
-      .send({ name: "Original Name", email: "profile@test.com", password: TEST_PASSWORD, acceptedTerms: true });
+    const registerRes = await request(app).post("/api/v1/auth/customer/register").send({
+      name: "Original Name",
+      email: "profile@test.com",
+      password: TEST_PASSWORD,
+      acceptedTerms: true,
+    });
     expect(registerRes.status).toBe(201);
     const accessToken = registerRes.body.data.accessToken;
 

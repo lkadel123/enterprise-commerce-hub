@@ -77,8 +77,7 @@ function LoginPage() {
             Commerce operations, under control.
           </h2>
           <p className="mt-3 text-sm opacity-80">
-            Unified catalog, orders, inventory and analytics for enterprise retail
-            teams.
+            Unified catalog, orders, inventory and analytics for enterprise retail teams.
           </p>
         </div>
         <p className="flex items-center gap-2 text-xs opacity-70">
@@ -102,7 +101,9 @@ function LoginPage() {
             )}
 
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs">Work email</Label>
+              <Label htmlFor="email" className="text-xs">
+                Work email
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -117,7 +118,9 @@ function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs">Password</Label>
+              <Label htmlFor="password" className="text-xs">
+                Password
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -136,11 +139,7 @@ function LoginPage() {
                 <Checkbox checked={remember} onCheckedChange={(c) => setRemember(!!c)} />
                 Remember this device
               </label>
-              <button
-                type="button"
-                className="text-sm text-primary hover:underline"
-                disabled
-              >
+              <button type="button" className="text-sm text-primary hover:underline" disabled>
                 Forgot password?
               </button>
             </div>

@@ -233,10 +233,20 @@ test.describe("security journeys", () => {
     request,
   }) => {
     const a = await request.post(`${API}/auth/customer/register`, {
-      data: { name: "Customer A", email: `a-${RUN}@test.com`, password: PASSWORD, acceptedTerms: true },
+      data: {
+        name: "Customer A",
+        email: `a-${RUN}@test.com`,
+        password: PASSWORD,
+        acceptedTerms: true,
+      },
     });
     const b = await request.post(`${API}/auth/customer/register`, {
-      data: { name: "Customer B", email: `b-${RUN}@test.com`, password: PASSWORD, acceptedTerms: true },
+      data: {
+        name: "Customer B",
+        email: `b-${RUN}@test.com`,
+        password: PASSWORD,
+        acceptedTerms: true,
+      },
     });
     expect(a.ok()).toBeTruthy();
     expect(b.ok()).toBeTruthy();
@@ -276,7 +286,12 @@ test.describe("security journeys", () => {
     // identical to a real user logging in with an unsafe `redirect` param.
     const api = await playwright.request.newContext();
     const reg = await api.post(`${API}/auth/customer/register`, {
-      data: { name: "Redirect Tester", email: `rd-${RUN}@test.com`, password: PASSWORD, acceptedTerms: true },
+      data: {
+        name: "Redirect Tester",
+        email: `rd-${RUN}@test.com`,
+        password: PASSWORD,
+        acceptedTerms: true,
+      },
     });
     expect(reg.ok()).toBeTruthy();
     await api.dispose();

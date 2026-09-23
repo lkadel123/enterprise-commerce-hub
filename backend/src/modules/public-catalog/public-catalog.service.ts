@@ -146,7 +146,11 @@ export const publicCatalogService = {
       publicCatalogRepository.inventoryTotals([product._id.toString()]),
       buildImageMediaMap([product]),
     ]);
-    return publicProductDto(product, totals.get(product._id.toString())?.available ?? 0, imageMedia);
+    return publicProductDto(
+      product,
+      totals.get(product._id.toString())?.available ?? 0,
+      imageMedia,
+    );
   },
 
   async getProductReviews(identifier: string, params: { page?: number; pageSize?: number }) {

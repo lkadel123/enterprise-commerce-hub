@@ -29,7 +29,10 @@ export const Route = createFileRoute("/customers/")({
         content: "Segment customers by lifetime value, order frequency, group and status.",
       },
       { property: "og:title", content: "Customers — Northpeak Commerce Console" },
-      { property: "og:description", content: "Customer directory with spend, orders and segmentation." },
+      {
+        property: "og:description",
+        content: "Customer directory with spend, orders and segmentation.",
+      },
     ],
   }),
   component: CustomersPage,
@@ -38,7 +41,17 @@ export const Route = createFileRoute("/customers/")({
 const PAGE_SIZE = 10;
 
 function customersToCsv(rows: CustomerDto[]): string {
-  const header = ["Name", "Email", "Phone", "Group", "Status", "Orders", "Total spent", "AOV", "Joined"];
+  const header = [
+    "Name",
+    "Email",
+    "Phone",
+    "Group",
+    "Status",
+    "Orders",
+    "Total spent",
+    "AOV",
+    "Joined",
+  ];
   const lines = rows.map((c) =>
     [c.name, c.email, c.phone ?? "", c.group, c.status, c.orders, c.spent, c.aov, c.joinedAt]
       .map((v) => `"${String(v).replace(/"/g, '""')}"`)
@@ -97,18 +110,42 @@ function CustomersPage() {
       />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Customers" value={total.toLocaleString()} note="Matching current filters" />
-        <StatCard label="Page Results" value={String(rows.length)} note={`Page ${page} of ${pageCount}`} />
+        <StatCard
+          label="Total Customers"
+          value={total.toLocaleString()}
+          note="Matching current filters"
+        />
+        <StatCard
+          label="Page Results"
+          value={String(rows.length)}
+          note={`Page ${page} of ${pageCount}`}
+        />
       </div>
 
       <Section className="mt-4" bodyClassName="p-0">
         <div className="flex flex-col gap-3 border-b p-3 sm:flex-row sm:items-center">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Search name or email..." className="h-9 pl-9" />
+            <Input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Search name or email..."
+              className="h-9 pl-9"
+            />
           </div>
-          <Select value={group} onValueChange={(v) => { setGroup(v); setPage(1); }}>
-            <SelectTrigger className="h-9 w-[168px]"><SelectValue /></SelectTrigger>
+          <Select
+            value={group}
+            onValueChange={(v) => {
+              setGroup(v);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="h-9 w-[168px]">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All groups</SelectItem>
               <SelectItem value="Retail">Retail</SelectItem>
@@ -135,41 +172,68 @@ function CustomersPage() {
             </thead>
             <tbody>
               {customersQuery.isPending ? (
-                <tr><td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">Loading customers…</td></tr>
-              ) : customersQuery.isError ? (
-                <tr><td colSpan={9} className="px-4 py-10 text-center text-sm text-destructive">Couldn't load customers. Check your connection and try again.</td></tr>
-              ) : rows.length === 0 ? (
-                <tr><td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">No customers match the current filters.</td></tr>
-              ) : (
-              rows.map((c) => (
-                <tr key={c.id} className="border-t transition-colors hover:bg-surface-muted/50">
-                  <td className="px-4 py-2.5">
-                    <Link to="/customers/$customerId" params={{ customerId: c.id }} className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-surface-muted text-xs">
-                          {c.name.split(" ").map((n: string) => n[0]).join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-primary hover:underline">{c.name}</p>
-                        <p className="truncate text-xs text-muted-foreground">{c.email}</p>
-                      </div>
-                    </Link>
-                  </td>
-                  <td className="num px-4 py-2.5 whitespace-nowrap text-muted-foreground">{c.phone ?? "—"}</td>
-                  <td className="num px-4 py-2.5 text-right">{c.orders}</td>
-                  <td className="num px-4 py-2.5 text-right font-medium">{formatNpr(c.spent)}</td>
-                  <td className="num px-4 py-2.5 text-right text-muted-foreground">{formatNpr(c.aov)}</td>
-                  <td className="num px-4 py-2.5 whitespace-nowrap text-muted-foreground">
-                    {c.lastOrder ? new Date(c.lastOrder).toLocaleDateString() : "—"}
-                  </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap">{c.group}</td>
-                  <td className="px-4 py-2.5"><StatusBadge status={c.status} /></td>
-                  <td className="num px-4 py-2.5 whitespace-nowrap text-muted-foreground">
-                    {new Date(c.joinedAt).toLocaleDateString()}
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    Loading customers…
                   </td>
                 </tr>
-              ))
+              ) : customersQuery.isError ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-destructive">
+                    Couldn't load customers. Check your connection and try again.
+                  </td>
+                </tr>
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    No customers match the current filters.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((c) => (
+                  <tr key={c.id} className="border-t transition-colors hover:bg-surface-muted/50">
+                    <td className="px-4 py-2.5">
+                      <Link
+                        to="/customers/$customerId"
+                        params={{ customerId: c.id }}
+                        className="flex items-center gap-3"
+                      >
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-surface-muted text-xs">
+                            {c.name
+                              .split(" ")
+                              .map((n: string) => n[0])
+                              .join("")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-primary hover:underline">
+                            {c.name}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">{c.email}</p>
+                        </div>
+                      </Link>
+                    </td>
+                    <td className="num px-4 py-2.5 whitespace-nowrap text-muted-foreground">
+                      {c.phone ?? "—"}
+                    </td>
+                    <td className="num px-4 py-2.5 text-right">{c.orders}</td>
+                    <td className="num px-4 py-2.5 text-right font-medium">{formatNpr(c.spent)}</td>
+                    <td className="num px-4 py-2.5 text-right text-muted-foreground">
+                      {formatNpr(c.aov)}
+                    </td>
+                    <td className="num px-4 py-2.5 whitespace-nowrap text-muted-foreground">
+                      {c.lastOrder ? new Date(c.lastOrder).toLocaleDateString() : "—"}
+                    </td>
+                    <td className="px-4 py-2.5 whitespace-nowrap">{c.group}</td>
+                    <td className="px-4 py-2.5">
+                      <StatusBadge status={c.status} />
+                    </td>
+                    <td className="num px-4 py-2.5 whitespace-nowrap text-muted-foreground">
+                      {new Date(c.joinedAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>

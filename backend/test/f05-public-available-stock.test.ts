@@ -146,7 +146,10 @@ describe("F-05 — availability follows the real reservation lifecycle", () => {
     const res = await request(app)
       .post("/api/v1/customer/orders")
       .set(header)
-      .send({ items: [{ productId: product._id.toString(), quantity: 1 }], paymentMethod: "Digital Wallet" })
+      .send({
+        items: [{ productId: product._id.toString(), quantity: 1 }],
+        paymentMethod: "Digital Wallet",
+      })
       .expect(201);
     return res.body.data.id as string;
   }

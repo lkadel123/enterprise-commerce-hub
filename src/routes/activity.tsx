@@ -12,7 +12,10 @@ export const Route = createFileRoute("/activity")({
         content: "Audit trail of admin actions with user, module, IP address and timestamp.",
       },
       { property: "og:title", content: "Activity Log — Northpeak" },
-      { property: "og:description", content: "Immutable audit trail for compliance and security review." },
+      {
+        property: "og:description",
+        content: "Immutable audit trail for compliance and security review.",
+      },
     ],
   }),
   component: ActivityPage,

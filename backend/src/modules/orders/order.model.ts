@@ -207,7 +207,7 @@ const orderSchema = new Schema<IOrder>(
       transactionId: { type: String },
       providerTransactionId: { type: String },
       amount: { type: Number, min: 0 },
-            currency: { type: String, default: "USD" },
+      currency: { type: String, default: "USD" },
       initiatedAt: { type: Date },
       paidAt: { type: Date },
       failureReason: { type: String },

@@ -38,7 +38,11 @@ export function RequireAdminAuth({ children }: { children: ReactNode }) {
   // restoring, or unauthenticated-but-not-yet-redirected: show a neutral boot
   // screen instead of protected UI.
   return (
-    <div className="grid min-h-screen place-items-center bg-background" role="status" aria-live="polite">
+    <div
+      className="grid min-h-screen place-items-center bg-background"
+      role="status"
+      aria-live="polite"
+    >
       <div className="flex items-center gap-3 text-sm text-muted-foreground">
         <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
         Checking session…
@@ -53,8 +57,8 @@ export function PermissionDenied({ feature }: { feature: string }) {
     <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
       <p className="text-2xl font-semibold tracking-tight">Access denied</p>
       <p className="text-sm text-muted-foreground">
-        Your role does not include permission to {feature}. Contact an administrator
-        if you believe this is a mistake.
+        Your role does not include permission to {feature}. Contact an administrator if you believe
+        this is a mistake.
       </p>
     </div>
   );

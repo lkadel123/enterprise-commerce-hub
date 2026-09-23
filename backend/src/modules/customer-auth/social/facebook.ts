@@ -42,7 +42,9 @@ function appAccessToken(): string {
 
 /** Absolute redirect URI registered in the Meta developer console. */
 export function facebookRedirectUri(): string {
-  return env.FACEBOOK_REDIRECT_URI ?? `${env.BACKEND_PUBLIC_URL}/api/v1/auth/customer/facebook/callback`;
+  return (
+    env.FACEBOOK_REDIRECT_URI ?? `${env.BACKEND_PUBLIC_URL}/api/v1/auth/customer/facebook/callback`
+  );
 }
 
 /** Builds the consent-screen URL (the `state` value is minted by the controller). */

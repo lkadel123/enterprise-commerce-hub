@@ -36,10 +36,14 @@ export const Route = createFileRoute("/coupons")({
       { title: "Coupons & Promotions — Northpeak Commerce Console" },
       {
         name: "description",
-        content: "Create percentage, fixed and free-shipping promotions with usage limits and eligibility rules.",
+        content:
+          "Create percentage, fixed and free-shipping promotions with usage limits and eligibility rules.",
       },
       { property: "og:title", content: "Coupons & Promotions — Northpeak" },
-      { property: "og:description", content: "Promotion management with usage limits and scheduling." },
+      {
+        property: "og:description",
+        content: "Promotion management with usage limits and scheduling.",
+      },
     ],
   }),
   component: CouponsPage,
@@ -90,8 +94,14 @@ function CouponsPage() {
   };
 
   const resetForm = () => {
-    setCode(""); setValue(""); setMinOrder(""); setMaxDiscount("");
-    setUsageLimit(""); setPerCustomerLimit(""); setStartAt(""); setEndAt("");
+    setCode("");
+    setValue("");
+    setMinOrder("");
+    setMaxDiscount("");
+    setUsageLimit("");
+    setPerCustomerLimit("");
+    setStartAt("");
+    setEndAt("");
   };
 
   const submit = () => {
@@ -180,22 +190,33 @@ function CouponsPage() {
         actions={
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="h-9"><Plus className="h-4 w-4" /> New coupon</Button>
+              <Button size="sm" className="h-9">
+                <Plus className="h-4 w-4" /> New coupon
+              </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create coupon</DialogTitle>
-                <DialogDescription>Define the discount, eligibility and validity window.</DialogDescription>
+                <DialogDescription>
+                  Define the discount, eligibility and validity window.
+                </DialogDescription>
               </DialogHeader>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Coupon code</Label>
-                  <Input className="num h-9" value={code} onChange={(e) => setCode(e.target.value)} placeholder="AUTUMN20" />
+                  <Input
+                    className="num h-9"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="AUTUMN20"
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Discount type</Label>
                   <Select value={type} onValueChange={(v) => setType(v as CouponType)}>
-                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Percentage">Percentage discount</SelectItem>
                       <SelectItem value="Fixed">Fixed discount</SelectItem>
@@ -206,36 +227,73 @@ function CouponsPage() {
                 {type !== "Free Shipping" && (
                   <div className="space-y-1.5">
                     <Label className="text-xs">Discount value</Label>
-                    <Input className="num h-9" value={value} onChange={(e) => setValue(e.target.value)} placeholder={type === "Percentage" ? "20" : "500"} />
+                    <Input
+                      className="num h-9"
+                      value={value}
+                      onChange={(e) => setValue(e.target.value)}
+                      placeholder={type === "Percentage" ? "20" : "500"}
+                    />
                   </div>
                 )}
                 <div className="space-y-1.5">
                   <Label className="text-xs">Minimum order value</Label>
-                  <Input className="num h-9" value={minOrder} onChange={(e) => setMinOrder(e.target.value)} placeholder="100.00" />
+                  <Input
+                    className="num h-9"
+                    value={minOrder}
+                    onChange={(e) => setMinOrder(e.target.value)}
+                    placeholder="100.00"
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Maximum discount</Label>
-                  <Input className="num h-9" value={maxDiscount} onChange={(e) => setMaxDiscount(e.target.value)} placeholder="80.00" />
+                  <Input
+                    className="num h-9"
+                    value={maxDiscount}
+                    onChange={(e) => setMaxDiscount(e.target.value)}
+                    placeholder="80.00"
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Usage limit</Label>
-                  <Input className="num h-9" value={usageLimit} onChange={(e) => setUsageLimit(e.target.value)} placeholder="5000" />
+                  <Input
+                    className="num h-9"
+                    value={usageLimit}
+                    onChange={(e) => setUsageLimit(e.target.value)}
+                    placeholder="5000"
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Per-customer limit</Label>
-                  <Input className="num h-9" value={perCustomerLimit} onChange={(e) => setPerCustomerLimit(e.target.value)} placeholder="1" />
+                  <Input
+                    className="num h-9"
+                    value={perCustomerLimit}
+                    onChange={(e) => setPerCustomerLimit(e.target.value)}
+                    placeholder="1"
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Start date</Label>
-                  <Input type="date" className="h-9" value={startAt} onChange={(e) => setStartAt(e.target.value)} />
+                  <Input
+                    type="date"
+                    className="h-9"
+                    value={startAt}
+                    onChange={(e) => setStartAt(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">End date</Label>
-                  <Input type="date" className="h-9" value={endAt} onChange={(e) => setEndAt(e.target.value)} />
+                  <Input
+                    type="date"
+                    className="h-9"
+                    value={endAt}
+                    onChange={(e) => setEndAt(e.target.value)}
+                  />
                 </div>
               </div>
               <DialogFooter>
-                <Button size="sm" disabled={createCoupon.isPending} onClick={submit}>Create coupon</Button>
+                <Button size="sm" disabled={createCoupon.isPending} onClick={submit}>
+                  Create coupon
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -260,46 +318,77 @@ function CouponsPage() {
             </thead>
             <tbody>
               {couponsQuery.isPending ? (
-                <tr><td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">Loading coupons…</td></tr>
-              ) : couponsQuery.isError ? (
-                <tr><td colSpan={9} className="px-4 py-10 text-center text-sm text-destructive">Couldn't load coupons. Check your connection and try again.</td></tr>
-              ) : rows.length === 0 ? (
-                <tr><td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">No coupons yet. Create your first promotion.</td></tr>
-              ) : (
-              rows.map((c) => (
-                <tr key={c.id} className="border-t transition-colors hover:bg-surface-muted/50">
-                  <td className="num px-4 py-3 font-semibold">{c.code}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{c.type}</td>
-                  <td className="num px-4 py-3">{couponValue(c)}</td>
-                  <td className="num px-4 py-3 text-right text-muted-foreground">{c.minOrder > 0 ? formatNpr(c.minOrder) : "—"}</td>
-                  <td className="num px-4 py-3 text-right text-muted-foreground">{c.maxDiscount > 0 ? formatNpr(c.maxDiscount) : "—"}</td>
-                  <td className="px-4 py-3">
-                    <div className="w-36">
-                      <p className="num text-xs text-muted-foreground">{c.used.toLocaleString()} / {c.usageLimit.toLocaleString()}</p>
-                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-muted">
-                        <div className="h-full rounded-full bg-primary" style={{ width: `${c.usageLimit > 0 ? Math.min(100, (c.used / c.usageLimit) * 100) : 0}%` }} />
-                      </div>
-                    </div>
-                  </td>
-                  <td className="num px-4 py-3 whitespace-nowrap text-muted-foreground">
-                    {new Date(c.startAt).toLocaleDateString()} → {new Date(c.endAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => openEdit(c)}>
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-xs text-destructive"
-                      onClick={() => setDeleting(c)}
-                    >
-                      Delete
-                    </Button>
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    Loading coupons…
                   </td>
                 </tr>
-              ))
+              ) : couponsQuery.isError ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-destructive">
+                    Couldn't load coupons. Check your connection and try again.
+                  </td>
+                </tr>
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    No coupons yet. Create your first promotion.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((c) => (
+                  <tr key={c.id} className="border-t transition-colors hover:bg-surface-muted/50">
+                    <td className="num px-4 py-3 font-semibold">{c.code}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{c.type}</td>
+                    <td className="num px-4 py-3">{couponValue(c)}</td>
+                    <td className="num px-4 py-3 text-right text-muted-foreground">
+                      {c.minOrder > 0 ? formatNpr(c.minOrder) : "—"}
+                    </td>
+                    <td className="num px-4 py-3 text-right text-muted-foreground">
+                      {c.maxDiscount > 0 ? formatNpr(c.maxDiscount) : "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="w-36">
+                        <p className="num text-xs text-muted-foreground">
+                          {c.used.toLocaleString()} / {c.usageLimit.toLocaleString()}
+                        </p>
+                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-muted">
+                          <div
+                            className="h-full rounded-full bg-primary"
+                            style={{
+                              width: `${c.usageLimit > 0 ? Math.min(100, (c.used / c.usageLimit) * 100) : 0}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="num px-4 py-3 whitespace-nowrap text-muted-foreground">
+                      {new Date(c.startAt).toLocaleDateString()} →{" "}
+                      {new Date(c.endAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={c.status} />
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={() => openEdit(c)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs text-destructive"
+                        onClick={() => setDeleting(c)}
+                      >
+                        Delete
+                      </Button>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
@@ -310,17 +399,26 @@ function CouponsPage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit coupon</DialogTitle>
-            <DialogDescription>Update the discount, eligibility and validity window.</DialogDescription>
+            <DialogDescription>
+              Update the discount, eligibility and validity window.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label className="text-xs">Coupon code</Label>
-              <Input className="num h-9" value={editCode} onChange={(e) => setEditCode(e.target.value)} placeholder="AUTUMN20" />
+              <Input
+                className="num h-9"
+                value={editCode}
+                onChange={(e) => setEditCode(e.target.value)}
+                placeholder="AUTUMN20"
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Discount type</Label>
               <Select value={editType} onValueChange={(v) => setEditType(v as CouponType)}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Percentage">Percentage discount</SelectItem>
                   <SelectItem value="Fixed">Fixed discount</SelectItem>
@@ -331,32 +429,67 @@ function CouponsPage() {
             {editType !== "Free Shipping" && (
               <div className="space-y-1.5">
                 <Label className="text-xs">Discount value</Label>
-                <Input className="num h-9" value={editValue} onChange={(e) => setEditValue(e.target.value)} placeholder={editType === "Percentage" ? "20" : "500"} />
+                <Input
+                  className="num h-9"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  placeholder={editType === "Percentage" ? "20" : "500"}
+                />
               </div>
             )}
             <div className="space-y-1.5">
               <Label className="text-xs">Minimum order value</Label>
-              <Input className="num h-9" value={editMinOrder} onChange={(e) => setEditMinOrder(e.target.value)} placeholder="100.00" />
+              <Input
+                className="num h-9"
+                value={editMinOrder}
+                onChange={(e) => setEditMinOrder(e.target.value)}
+                placeholder="100.00"
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Maximum discount</Label>
-              <Input className="num h-9" value={editMaxDiscount} onChange={(e) => setEditMaxDiscount(e.target.value)} placeholder="80.00" />
+              <Input
+                className="num h-9"
+                value={editMaxDiscount}
+                onChange={(e) => setEditMaxDiscount(e.target.value)}
+                placeholder="80.00"
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Usage limit</Label>
-              <Input className="num h-9" value={editUsageLimit} onChange={(e) => setEditUsageLimit(e.target.value)} placeholder="5000" />
+              <Input
+                className="num h-9"
+                value={editUsageLimit}
+                onChange={(e) => setEditUsageLimit(e.target.value)}
+                placeholder="5000"
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Per-customer limit</Label>
-              <Input className="num h-9" value={editPerCustomerLimit} onChange={(e) => setEditPerCustomerLimit(e.target.value)} placeholder="1" />
+              <Input
+                className="num h-9"
+                value={editPerCustomerLimit}
+                onChange={(e) => setEditPerCustomerLimit(e.target.value)}
+                placeholder="1"
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Start date</Label>
-              <Input type="date" className="h-9" value={editStartAt} onChange={(e) => setEditStartAt(e.target.value)} />
+              <Input
+                type="date"
+                className="h-9"
+                value={editStartAt}
+                onChange={(e) => setEditStartAt(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">End date</Label>
-              <Input type="date" className="h-9" value={editEndAt} onChange={(e) => setEditEndAt(e.target.value)} />
+              <Input
+                type="date"
+                className="h-9"
+                value={editEndAt}
+                onChange={(e) => setEditEndAt(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>

@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { API_BASE_URL } from "@/config/env";
 import { isSafeRedirect } from "@/lib/auth/CustomerAuthContext";
 
-
 interface SocialLoginButtonsProps {
   /** Post-authentication destination (already open-redirect validated). */
   redirect?: string | undefined;

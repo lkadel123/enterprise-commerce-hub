@@ -48,9 +48,7 @@ export interface ApiEnvelope<T> {
   message?: string;
 }
 
-const viteEnv = (
-  import.meta as { env?: Record<string, string | undefined> }
-).env;
+const viteEnv = (import.meta as { env?: Record<string, string | undefined> }).env;
 let refreshRunner: (() => Promise<string | null>) | null = null;
 
 let onUnauthenticated: (() => void) | null = null;
@@ -205,7 +203,6 @@ export function buildQuery(
   const qs = search.toString();
   return qs ? `?${qs}` : "";
 }
-
 
 /** Public backend API base URL. */
 export const API_BASE_URL = viteEnv?.["VITE_API_URL"] || "http://localhost:4000/api/v1";

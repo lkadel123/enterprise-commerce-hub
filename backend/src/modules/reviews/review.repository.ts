@@ -29,7 +29,6 @@ interface DistRow {
   count: number;
 }
 
-
 const productRatingLocks = new Map<string, Promise<void>>();
 
 async function syncProductRating(

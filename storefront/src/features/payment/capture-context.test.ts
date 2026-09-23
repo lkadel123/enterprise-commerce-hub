@@ -8,10 +8,7 @@ import {
 /** Build a fake JWT (header.payload.signature) with base64url segments. */
 function makeJwt(payload: unknown): string {
   const encode = (value: unknown) =>
-    btoa(JSON.stringify(value))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
+    btoa(JSON.stringify(value)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   return `${encode({ alg: "RS256", typ: "JWT" })}.${encode(payload)}.sig`;
 }
 
@@ -20,8 +17,7 @@ const SESSION_PAYLOAD = {
   ctx: [
     {
       data: {
-        clientLibrary:
-          "https://sdk.web-metrics.cybersource.com/uc/1.2.0/unified-checkout.js",
+        clientLibrary: "https://sdk.web-metrics.cybersource.com/uc/1.2.0/unified-checkout.js",
         clientLibraryIntegrity: "sha384-abc123",
         clientVersion: "1.2.0",
       },
@@ -36,23 +32,15 @@ describe("isAllowedCybersourceScriptUrl", () => {
         "https://sdk.web-metrics.cybersource.com/uc/unified-checkout.js",
       ),
     ).toBe(true);
-    expect(isAllowedCybersourceScriptUrl("https://cybersource.com/x.js")).toBe(
-      true,
-    );
+    expect(isAllowedCybersourceScriptUrl("https://cybersource.com/x.js")).toBe(true);
   });
 
   it("rejects non-https, foreign-host and malformed URLs", () => {
-    expect(
-      isAllowedCybersourceScriptUrl("http://sdk.cybersource.com/uc.js"),
-    ).toBe(false);
-    expect(isAllowedCybersourceScriptUrl("https://evil.example.com/uc.js")).toBe(
+    expect(isAllowedCybersourceScriptUrl("http://sdk.cybersource.com/uc.js")).toBe(false);
+    expect(isAllowedCybersourceScriptUrl("https://evil.example.com/uc.js")).toBe(false);
+    expect(isAllowedCybersourceScriptUrl("https://cybersource.com.evil.example.com/uc.js")).toBe(
       false,
     );
-    expect(
-      isAllowedCybersourceScriptUrl(
-        "https://cybersource.com.evil.example.com/uc.js",
-      ),
-    ).toBe(false);
     expect(isAllowedCybersourceScriptUrl("not a url")).toBe(false);
   });
 });
@@ -95,12 +83,8 @@ describe("decodeCaptureContext", () => {
 
   it("rejects malformed JWTs and missing client-library data", () => {
     expect(() => decodeCaptureContext("not-a-jwt")).toThrow(/three segments/i);
-    expect(() => decodeCaptureContext("a.not-base64!.c")).toThrow(
-      /not valid JSON/i,
-    );
-    expect(() => decodeCaptureContext(makeJwt({ foo: "bar" }))).toThrow(
-      /client library URL/i,
-    );
+    expect(() => decodeCaptureContext("a.not-base64!.c")).toThrow(/not valid JSON/i);
+    expect(() => decodeCaptureContext(makeJwt({ foo: "bar" }))).toThrow(/client library URL/i);
   });
 
   it("extracts targetOrigins when the capture context declares them", () => {
@@ -161,8 +145,6 @@ describe("isCurrentOriginAllowed", () => {
 
   it("passes when the capture context declares no origins (nothing to check)", () => {
     expect(isCurrentOriginAllowed({}, "https://nasbonlinemart.com")).toBe(true);
-    expect(isCurrentOriginAllowed({ targetOrigins: [] }, "anywhere")).toBe(
-      true,
-    );
+    expect(isCurrentOriginAllowed({ targetOrigins: [] }, "anywhere")).toBe(true);
   });
 });

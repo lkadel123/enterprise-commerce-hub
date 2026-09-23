@@ -18,7 +18,6 @@ import { orderRepository } from "../src/modules/orders/order.repository.js";
 import { paymentProviderMap } from "../src/modules/payments/payment.providers.js";
 import type { PaymentProviderInterface } from "../src/modules/payments/payment.provider.js";
 
-
 const app = getApp();
 
 async function seedCommerce(price = 100) {
@@ -467,10 +466,7 @@ describe("Phase 16 - order lifecycle", () => {
       const { product } = await seedCommerce();
       const orderId = await shippedPaidOrder(product._id.toString());
       const { header } = await userTokenFor();
-      const out = await request(app)
-        .post(`/api/v1/orders/${orderId}/refund`)
-        .set(header)
-        .send({});
+      const out = await request(app).post(`/api/v1/orders/${orderId}/refund`).set(header).send({});
       expect(out.status).toBe(200);
       expect(out.body.data.status).toBe("Refunded");
       expect(out.body.data.refund.status).toBe("UNSUPPORTED");
@@ -670,9 +666,7 @@ describe("Phase 16 - order lifecycle", () => {
       const { product } = await seedCommerce();
       const account = await seedCustomerAccount();
       const res = await placeOrder(account, product._id.toString());
-      const noAuth = await request(app)
-        .post(`/api/v1/orders/${res.body.data.id}/cancel`)
-        .send({});
+      const noAuth = await request(app).post(`/api/v1/orders/${res.body.data.id}/cancel`).send({});
       expect(noAuth.status).toBe(401);
       const noAuthStatus = await request(app)
         .patch(`/api/v1/orders/${res.body.data.id}/status`)

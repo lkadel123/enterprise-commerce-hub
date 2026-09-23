@@ -55,7 +55,10 @@ beforeEach(() => {
 describe("Header / MobileNav", () => {
   it("renders the brand link and main navigation with accessible names", async () => {
     renderHeader();
-    expect(screen.getByRole("link", { name: new RegExp(BRAND.name, "i") })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: new RegExp(BRAND.name, "i") })).toHaveAttribute(
+      "href",
+      "/",
+    );
     for (const name of [/products/i, /categories/i, /brands/i, /cart/i]) {
       expect(await screen.findByRole("link", { name })).toBeInTheDocument();
     }

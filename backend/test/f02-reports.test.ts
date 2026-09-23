@@ -78,7 +78,9 @@ async function adminHeader(role: Parameters<typeof userTokenFor>[0] = "Super Adm
 }
 
 async function get(path: string, header?: Record<string, string>, query = "") {
-  return request(app).get(`/api/v1${path}${query}`).set(header ?? (await adminHeader()));
+  return request(app)
+    .get(`/api/v1${path}${query}`)
+    .set(header ?? (await adminHeader()));
 }
 describe("F-02 — reports & analytics (backend)", () => {
   it("R1: rejects unauthenticated access (401)", async () => {
@@ -132,7 +134,11 @@ describe("F-02 — reports & analytics (backend)", () => {
     await setRegion(old.orderId, "Europe");
     await setCreatedAt(old.orderId, new Date(Date.now() - 400 * 86_400_000));
 
-    const inRange = await get("/reports/regions", undefined, "?from=" + new Date().toISOString().slice(0, 10));
+    const inRange = await get(
+      "/reports/regions",
+      undefined,
+      "?from=" + new Date().toISOString().slice(0, 10),
+    );
     expect(inRange.status).toBe(200);
     expect(inRange.body.data).toEqual([]);
 
@@ -173,7 +179,12 @@ describe("F-02 — reports & analytics (backend)", () => {
 
     const res = await get("/reports/revenue", undefined, "?granularity=monthly");
     expect(res.status).toBe(200);
-    const points = res.body.data as { key: string; revenue: number; orders: number; profit: number }[];
+    const points = res.body.data as {
+      key: string;
+      revenue: number;
+      orders: number;
+      profit: number;
+    }[];
     expect(points).toHaveLength(1);
     expect(points[0].revenue).toBe(total);
     expect(points[0].orders).toBe(1);
@@ -214,7 +225,12 @@ describe("F-02 — reports & analytics (backend)", () => {
 
     const res = await get("/reports/top-products?limit=5");
     expect(res.status).toBe(200);
-    const rows = res.body.data as { sku: string; name: string; unitsSold: number; revenue: number }[];
+    const rows = res.body.data as {
+      sku: string;
+      name: string;
+      unitsSold: number;
+      revenue: number;
+    }[];
     expect(rows).toHaveLength(1);
     expect(rows[0].sku).toBe("RPT-SKU");
     expect(rows[0].unitsSold).toBe(1);

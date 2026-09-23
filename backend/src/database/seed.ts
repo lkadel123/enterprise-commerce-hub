@@ -51,7 +51,6 @@ import { assertSeedAllowed } from "./seedGuard.js";
 
 export { assertSeedAllowed };
 
-
 const slugify = (value: string): string =>
   value
     .toLowerCase()

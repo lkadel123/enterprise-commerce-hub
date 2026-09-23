@@ -49,11 +49,7 @@ router.patch(
   validate(setOrderPaymentSchema),
   orderController.setPayment,
 );
-router.post(
-  "/expire-pending",
-  requirePermission("orders", "edit"),
-  orderController.expirePending,
-);
+router.post("/expire-pending", requirePermission("orders", "edit"), orderController.expirePending);
 router.post(
   "/:id/cancel",
   requirePermission("orders", "edit"),

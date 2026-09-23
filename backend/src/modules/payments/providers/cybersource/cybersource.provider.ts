@@ -1,7 +1,11 @@
 import { logger } from "../../../../utils/logger.js";
 import { cybersourceConfig } from "./cybersource.config.js";
 import { CybersourceApiError } from "./cybersource-client.js";
-import { CybersourceTokenError, tokenDiagnostics, verifyCybersourceToken } from "./cybersource-token.js";
+import {
+  CybersourceTokenError,
+  tokenDiagnostics,
+  verifyCybersourceToken,
+} from "./cybersource-token.js";
 import { createCaptureContext, newMerchantReference } from "./cybersource-session.js";
 import type {
   PaymentProviderInterface,
@@ -384,7 +388,11 @@ export class CybersourceProvider implements PaymentProviderInterface {
       { merchantReference: providerTransactionId },
       "Cybersource getStatus: database is the source of truth",
     );
-    return { status: "Pending", amount: 0, metadata: { note: "Verified via payment response token" } };
+    return {
+      status: "Pending",
+      amount: 0,
+      metadata: { note: "Verified via payment response token" },
+    };
   }
 
   refundCapability(): RefundCapability {

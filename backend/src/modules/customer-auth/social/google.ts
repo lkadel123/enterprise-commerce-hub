@@ -5,7 +5,13 @@ import { env } from "../../../config/env.js";
 import { badRequest } from "../../../utils/ApiError.js";
 import { logger } from "../../../utils/logger.js";
 import type { SocialProvider } from "../customerSocialAccount.model.js";
-import { OAuthProviderError, UnverifiedEmailError, formBody, oauthFetchJson, optionalString } from "./oauth-shared.js";
+import {
+  OAuthProviderError,
+  UnverifiedEmailError,
+  formBody,
+  oauthFetchJson,
+  optionalString,
+} from "./oauth-shared.js";
 
 /**
  * Google OAuth 2.0 / OpenID Connect client (Authorization Code flow).
@@ -42,7 +48,9 @@ export function isGoogleConfigured(): boolean {
 
 /** Absolute redirect URI registered in the Google Cloud console. */
 export function googleRedirectUri(): string {
-  return env.GOOGLE_REDIRECT_URI ?? `${env.BACKEND_PUBLIC_URL}/api/v1/auth/customer/google/callback`;
+  return (
+    env.GOOGLE_REDIRECT_URI ?? `${env.BACKEND_PUBLIC_URL}/api/v1/auth/customer/google/callback`
+  );
 }
 
 /** Builds the consent-screen URL (the `state` value is minted by the controller). */

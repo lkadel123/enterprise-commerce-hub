@@ -62,11 +62,7 @@ function toProfile(account: {
 }
 
 function isDuplicateKeyError(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    (error as { code?: number }).code === 11000
-  );
+  return typeof error === "object" && error !== null && (error as { code?: number }).code === 11000;
 }
 
 function assertActive(account: { status: string }): void {
@@ -144,9 +140,7 @@ export interface SocialConsentRequired {
 
 export type SocialSignInOutcome = CustomerAuthSessionResult | SocialConsentRequired;
 
-function isConsentRequired(
-  outcome: SocialSignInOutcome,
-): outcome is SocialConsentRequired {
+function isConsentRequired(outcome: SocialSignInOutcome): outcome is SocialConsentRequired {
   return (outcome as SocialConsentRequired).consentRequired === true;
 }
 
@@ -182,7 +176,10 @@ export async function resolveSocialSignIn(
     }
     if (email && email !== existingSocial.email) patch.email = email;
     if (Object.keys(patch).length > 0) {
-      await CustomerSocialAccountModel.updateOne({ _id: existingSocial._id }, { $set: patch }).exec();
+      await CustomerSocialAccountModel.updateOne(
+        { _id: existingSocial._id },
+        { $set: patch },
+      ).exec();
     }
     return issueSession(account as unknown as IAccountLike, ctx);
   }
@@ -199,7 +196,13 @@ export async function resolveSocialSignIn(
           "The provider did not verify this email. Sign in with email and password instead.",
         );
       }
-      await linkSocialAccount(provider, profile.providerUserId, existingByEmail._id, profile, email);
+      await linkSocialAccount(
+        provider,
+        profile.providerUserId,
+        existingByEmail._id,
+        profile,
+        email,
+      );
       // Mark the account email as provider-verified when never verified before.
       if (!existingByEmail.emailVerifiedAt) {
         await CustomerAccountModel.updateOne(
@@ -265,7 +268,13 @@ export async function acceptSocialTermsAndCreate(
           "The provider did not verify this email. Sign in with email and password instead.",
         );
       }
-      await linkSocialAccount(provider, profile.providerUserId, existingByEmail._id, profile, email);
+      await linkSocialAccount(
+        provider,
+        profile.providerUserId,
+        existingByEmail._id,
+        profile,
+        email,
+      );
       if (!existingByEmail.emailVerifiedAt) {
         await CustomerAccountModel.updateOne(
           { _id: existingByEmail._id, emailVerifiedAt: null },

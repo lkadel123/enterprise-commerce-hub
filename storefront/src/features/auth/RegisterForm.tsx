@@ -36,8 +36,7 @@ const registerSchema = z.object({
   // explicit acceptance passes; missing/false/other values are rejected.
   acceptedTerms: z.literal(true, {
     errorMap: () => ({
-      message:
-        "Please agree to the Terms & Conditions and Privacy Policy to create your account.",
+      message: "Please agree to the Terms & Conditions and Privacy Policy to create your account.",
     }),
   }),
 });

@@ -68,7 +68,8 @@ export function ProductResults({
         icon={<PackageX className="h-10 w-10" />}
         title={emptyTitle ?? "No products found"}
         description={
-          emptyDescription ?? "Try adjusting your search or filters to find what you're looking for."
+          emptyDescription ??
+          "Try adjusting your search or filters to find what you're looking for."
         }
         action={empty}
         className={className}

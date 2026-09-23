@@ -154,10 +154,14 @@ export function ResetPasswordForm({ requestId, token }: ResetPasswordFormProps) 
       <div className="space-y-4 text-center">
         <h2 className="text-lg font-semibold">Check your email</h2>
         <p className="text-sm text-muted-foreground">
-          If that email is registered, a password reset link has been sent. The link
-          expires after one use and a limited time.
+          If that email is registered, a password reset link has been sent. The link expires after
+          one use and a limited time.
         </p>
-        <Button variant="outline" className="h-11 w-full" onClick={() => navigate({ to: "/login" })}>
+        <Button
+          variant="outline"
+          className="h-11 w-full"
+          onClick={() => navigate({ to: "/login" })}
+        >
           Back to sign in
         </Button>
       </div>
@@ -240,8 +244,8 @@ export function ResetPasswordForm({ requestId, token }: ResetPasswordFormProps) 
     <Form {...requestForm}>
       <form onSubmit={requestForm.handleSubmit(onRequestSubmit)} className="space-y-4" noValidate>
         <p className="text-sm text-muted-foreground">
-          Enter the email address on your account and we&apos;ll send a one-time
-          password reset link.
+          Enter the email address on your account and we&apos;ll send a one-time password reset
+          link.
         </p>
 
         <FormField

@@ -1,7 +1,13 @@
 import { beforeAll, beforeEach, afterAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { connect, clearDatabase, disconnect } from "./helpers/testdb.js";
-import { getApp, seedCatalog, seedProduct, seedInventory, userTokenFor } from "./helpers/fixtures.js";
+import {
+  getApp,
+  seedCatalog,
+  seedProduct,
+  seedInventory,
+  userTokenFor,
+} from "./helpers/fixtures.js";
 import { ReviewModel } from "../src/modules/reviews/review.model.js";
 import { ProductModel } from "../src/modules/products/product.model.js";
 import { CustomerModel } from "../src/modules/customers/customer.model.js";
@@ -25,11 +31,7 @@ async function seedProductWithInventory() {
   return product;
 }
 
-async function seedReview(
-  productId: unknown,
-  rating: number,
-  status = "Pending",
-) {
+async function seedReview(productId: unknown, rating: number, status = "Pending") {
   const customer = await CustomerModel.create({
     name: "F04 Customer",
     email: `f04-${Math.random().toString(36).slice(2)}@test.com`,
@@ -237,15 +239,9 @@ describe("F-04 review rating aggregation", () => {
 
     const { rating, reviewsCount } = await productAggregates(product._id);
     expect(reviewsCount).toBe(30);
-    expect(rating).toBeCloseTo(
-      ratings.reduce((a, b) => a + b, 0) / ratings.length,
-      6,
-    );
+    expect(rating).toBeCloseTo(ratings.reduce((a, b) => a + b, 0) / ratings.length, 6);
 
-    const docs = await ReviewModel.find({ product: product._id })
-      .limit(10)
-      .lean()
-      .exec();
+    const docs = await ReviewModel.find({ product: product._id }).limit(10).lean().exec();
     const results = await Promise.all(docs.map((d) => moderate(d._id, "Hidden")));
     for (const res of results) expect(res.status).toBe(200);
 

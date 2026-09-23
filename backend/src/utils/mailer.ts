@@ -33,9 +33,7 @@ function getTransporter(): Transporter | null {
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,
       secure: env.SMTP_SECURE,
-      ...(env.SMTP_USER
-        ? { auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD } }
-        : {}),
+      ...(env.SMTP_USER ? { auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD } } : {}),
       connectionTimeout: env.SMTP_CONNECTION_TIMEOUT_MS,
       greetingTimeout: env.SMTP_CONNECTION_TIMEOUT_MS,
       socketTimeout: env.SMTP_CONNECTION_TIMEOUT_MS,
@@ -60,9 +58,7 @@ export function resetMailerForTests(): void {
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
   const tx = getTransporter();
   if (!tx) {
-    throw serviceUnavailable(
-      "Password reset by email is not available. Please contact support.",
-    );
+    throw serviceUnavailable("Password reset by email is not available. Please contact support.");
   }
 
   try {

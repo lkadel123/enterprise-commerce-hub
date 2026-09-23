@@ -155,7 +155,11 @@ describe("CybersourceProvider.verify (signed response token)", () => {
     const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
     const header = encode({ alg: "RS256", kid: "test-kid-123", typ: "JWT" });
     const payload = encode(claims);
-    const signature = cryptoSign("RSA-SHA256", Buffer.from(`${header}.${payload}`, "utf8"), privateKey);
+    const signature = cryptoSign(
+      "RSA-SHA256",
+      Buffer.from(`${header}.${payload}`, "utf8"),
+      privateKey,
+    );
     return `${header}.${payload}.${signature.toString("base64url")}`;
   }
 

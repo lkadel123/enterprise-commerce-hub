@@ -147,7 +147,7 @@ export const productService = {
     if (dependents.length > 0) {
       throw conflict(
         `Product has dependent records (${dependents.join(", ")}). ` +
-          "Set its status to \"Archived\" instead of deleting it.",
+          'Set its status to "Archived" instead of deleting it.',
       );
     }
 

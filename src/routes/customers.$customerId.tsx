@@ -21,7 +21,10 @@ export const Route = createFileRoute("/customers/$customerId")({
         content: `Profile, order history, spend and activity for customer ${params.customerId}.`,
       },
       { property: "og:title", content: `Customer ${params.customerId} — Northpeak` },
-      { property: "og:description", content: "Customer profile with orders, reviews and lifetime value." },
+      {
+        property: "og:description",
+        content: "Customer profile with orders, reviews and lifetime value.",
+      },
     ],
   }),
   component: CustomerDetail,
@@ -44,7 +47,9 @@ function CustomerDetail() {
   if (customerQuery.isError || !customerQuery.data?.data) {
     return (
       <AppShell>
-        <p className="text-sm text-destructive">Couldn't load this customer. They may not exist or you may lack permission.</p>
+        <p className="text-sm text-destructive">
+          Couldn't load this customer. They may not exist or you may lack permission.
+        </p>
       </AppShell>
     );
   }
@@ -55,7 +60,9 @@ function CustomerDetail() {
   return (
     <AppShell>
       <Button asChild variant="ghost" size="sm" className="mb-3 -ml-2 h-8">
-        <Link to="/customers"><ArrowLeft className="h-4 w-4" /> Back to customers</Link>
+        <Link to="/customers">
+          <ArrowLeft className="h-4 w-4" /> Back to customers
+        </Link>
       </Button>
 
       <PageHeader
@@ -63,7 +70,9 @@ function CustomerDetail() {
         description={`${customer.id} · joined ${new Date(customer.joinedAt).toLocaleDateString()} · ${customer.group} group`}
         actions={
           <a href={`mailto:${customer.email}`}>
-            <Button variant="outline" size="sm" className="h-9"><Mail className="h-4 w-4" /> Email</Button>
+            <Button variant="outline" size="sm" className="h-9">
+              <Mail className="h-4 w-4" /> Email
+            </Button>
           </a>
         }
       />
@@ -74,7 +83,10 @@ function CustomerDetail() {
             <div className="flex items-center gap-3">
               <Avatar className="h-12 w-12">
                 <AvatarFallback className="bg-primary text-primary-foreground">
-                  {customer.name.split(" ").map((n: string) => n[0]).join("")}
+                  {customer.name
+                    .split(" ")
+                    .map((n: string) => n[0])
+                    .join("")}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
@@ -84,9 +96,16 @@ function CustomerDetail() {
             </div>
             <Separator className="my-4" />
             <ul className="space-y-2.5 text-sm">
-              <li className="flex items-center gap-2 text-muted-foreground"><Mail className="h-4 w-4 shrink-0" /><span className="truncate">{customer.email}</span></li>
-              <li className="num flex items-center gap-2 text-muted-foreground">{customer.phone ?? "—"}</li>
-              {customer.city && <li className="flex items-start gap-2 text-muted-foreground">{customer.city}</li>}
+              <li className="flex items-center gap-2 text-muted-foreground">
+                <Mail className="h-4 w-4 shrink-0" />
+                <span className="truncate">{customer.email}</span>
+              </li>
+              <li className="num flex items-center gap-2 text-muted-foreground">
+                {customer.phone ?? "—"}
+              </li>
+              {customer.city && (
+                <li className="flex items-start gap-2 text-muted-foreground">{customer.city}</li>
+              )}
             </ul>
           </Section>
 
@@ -106,14 +125,18 @@ function CustomerDetail() {
               </div>
               <div className="rounded-md border bg-surface-muted/50 p-3">
                 <dt className="text-xs text-muted-foreground">Last order</dt>
-                <dd className="num mt-0.5 font-semibold">{customer.lastOrder ? new Date(customer.lastOrder).toLocaleDateString() : "—"}</dd>
+                <dd className="num mt-0.5 font-semibold">
+                  {customer.lastOrder ? new Date(customer.lastOrder).toLocaleDateString() : "—"}
+                </dd>
               </div>
             </dl>
           </Section>
 
           <Section title="Internal notes">
             <Textarea rows={4} placeholder="Add a note visible only to your team..." />
-            <Button size="sm" className="mt-3 h-8">Save note</Button>
+            <Button size="sm" className="mt-3 h-8">
+              Save note
+            </Button>
           </Section>
         </div>
 
@@ -122,7 +145,9 @@ function CustomerDetail() {
             <Tabs defaultValue="orders">
               <div className="border-b px-4 pt-3">
                 <TabsList className="h-9">
-                  <TabsTrigger value="orders" className="text-xs">Order history</TabsTrigger>
+                  <TabsTrigger value="orders" className="text-xs">
+                    Order history
+                  </TabsTrigger>
                 </TabsList>
               </div>
 
@@ -140,19 +165,40 @@ function CustomerDetail() {
                     </thead>
                     <tbody>
                       {history.length === 0 ? (
-                        <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">No orders yet.</td></tr>
-                      ) : (
-                      history.map((o) => (
-                        <tr key={o.id} className="border-t hover:bg-surface-muted/50">
-                          <td className="px-4 py-2.5">
-                            <Link to="/orders/$orderId" params={{ orderId: o.id }} className="num font-medium text-primary hover:underline">{o.orderNumber}</Link>
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="px-4 py-8 text-center text-sm text-muted-foreground"
+                          >
+                            No orders yet.
                           </td>
-                          <td className="num px-4 py-2.5 text-muted-foreground">{new Date(o.createdAt).toLocaleDateString()}</td>
-                          <td className="num px-4 py-2.5">{o.items.reduce((n, it) => n + it.qty, 0)}</td>
-                          <td className="num px-4 py-2.5 text-right font-medium">{formatNpr(o.amounts.total)}</td>
-                          <td className="px-4 py-2.5"><StatusBadge status={o.status} /></td>
                         </tr>
-                      ))
+                      ) : (
+                        history.map((o) => (
+                          <tr key={o.id} className="border-t hover:bg-surface-muted/50">
+                            <td className="px-4 py-2.5">
+                              <Link
+                                to="/orders/$orderId"
+                                params={{ orderId: o.id }}
+                                className="num font-medium text-primary hover:underline"
+                              >
+                                {o.orderNumber}
+                              </Link>
+                            </td>
+                            <td className="num px-4 py-2.5 text-muted-foreground">
+                              {new Date(o.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="num px-4 py-2.5">
+                              {o.items.reduce((n, it) => n + it.qty, 0)}
+                            </td>
+                            <td className="num px-4 py-2.5 text-right font-medium">
+                              {formatNpr(o.amounts.total)}
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <StatusBadge status={o.status} />
+                            </td>
+                          </tr>
+                        ))
                       )}
                     </tbody>
                   </table>

@@ -59,6 +59,10 @@ export interface SocialLink {
  */
 export const SOCIAL_LINKS: ReadonlyArray<SocialLink> = [
   { platform: "Facebook", url: "https://www.facebook.com/share/1DeNFcN3NN/", icon: Facebook },
-  { platform: "Instagram", url: "https://www.instagram.com/nasbonlinemart.23?stkn=MXdiN3p6M3Jub2F2cA==", icon: Instagram },
+  {
+    platform: "Instagram",
+    url: "https://www.instagram.com/nasbonlinemart.23?stkn=MXdiN3p6M3Jub2F2cA==",
+    icon: Instagram,
+  },
   { platform: "LinkedIn", url: "https://www.tiktok.com/@nasbonlinemart", icon: Linkedin },
 ] as const;

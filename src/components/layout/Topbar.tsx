@@ -84,15 +84,17 @@ export function Topbar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { dark, toggle } = useTheme();
   const segments = pathname.split("/").filter(Boolean);
-  const title = labels[segments[segments.length - 1] ?? ""] ?? segments[segments.length - 1] ?? "Dashboard";
+  const title =
+    labels[segments[segments.length - 1] ?? ""] ?? segments[segments.length - 1] ?? "Dashboard";
 
   // Guest/user initials for avatar
-  const initials = user?.name
-    .split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase() ?? "??";
+  const initials =
+    user?.name
+      .split(" ")
+      .map((p) => p[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() ?? "??";
 
   return (
     <header className="sticky top-0 z-30 border-b bg-surface/85 backdrop-blur supports-[backdrop-filter]:bg-surface/70">
@@ -113,22 +115,16 @@ export function Topbar() {
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
                     {i === segments.length - 1 ? (
-                      <BreadcrumbPage className="capitalize">
-                        {labels[seg] ?? seg}
-                      </BreadcrumbPage>
+                      <BreadcrumbPage className="capitalize">{labels[seg] ?? seg}</BreadcrumbPage>
                     ) : (
-                      <BreadcrumbLink className="capitalize">
-                        {labels[seg] ?? seg}
-                      </BreadcrumbLink>
+                      <BreadcrumbLink className="capitalize">{labels[seg] ?? seg}</BreadcrumbLink>
                     )}
                   </BreadcrumbItem>
                 </span>
               ))}
             </BreadcrumbList>
           </Breadcrumb>
-          <p className="mt-0.5 truncate text-sm font-semibold tracking-tight capitalize">
-            {title}
-          </p>
+          <p className="mt-0.5 truncate text-sm font-semibold tracking-tight capitalize">{title}</p>
         </div>
 
         <div className="relative mx-auto hidden w-full max-w-md md:block">
@@ -157,7 +153,9 @@ export function Topbar() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative h-9 w-9">
                 <Bell className="h-4.5 w-4.5" />
-                {isAuthenticated && <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-surface" />}
+                {isAuthenticated && (
+                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-surface" />
+                )}
                 <span className="sr-only">Notifications</span>
               </Button>
             </DropdownMenuTrigger>
@@ -213,7 +211,9 @@ export function Topbar() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden text-left lg:block">
-                  <p className="text-xs font-medium truncate max-w-[140px]">{user?.name ?? "Admin"}</p>
+                  <p className="text-xs font-medium truncate max-w-[140px]">
+                    {user?.name ?? "Admin"}
+                  </p>
                   {user?.role && <p className="text-[11px] text-muted-foreground">{user.role}</p>}
                 </div>
               </button>
@@ -221,9 +221,7 @@ export function Topbar() {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <p className="text-sm font-medium">{user?.name ?? "Admin"}</p>
-                <p className="text-xs font-normal text-muted-foreground">
-                  {user?.email ?? ""}
-                </p>
+                <p className="text-xs font-normal text-muted-foreground">{user?.email ?? ""}</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>

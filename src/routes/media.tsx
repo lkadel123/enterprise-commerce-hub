@@ -94,9 +94,7 @@ function MediaPage() {
         setAlt("");
         if (fileInputRef.current) fileInputRef.current.value = "";
       })
-      .catch((e: unknown) =>
-        toast.error(e instanceof AdminApiError ? e.message : "Upload failed"),
-      );
+      .catch((e: unknown) => toast.error(e instanceof AdminApiError ? e.message : "Upload failed"));
   };
 
   const submitEdit = () => {
@@ -107,9 +105,7 @@ function MediaPage() {
         toast.success("Image updated");
         setEditing(null);
       })
-      .catch((e: unknown) =>
-        toast.error(e instanceof AdminApiError ? e.message : "Update failed"),
-      );
+      .catch((e: unknown) => toast.error(e instanceof AdminApiError ? e.message : "Update failed"));
   };
 
   const submitDelete = () => {
@@ -162,7 +158,9 @@ function MediaPage() {
             </form>
             <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="h-9"><Upload className="h-4 w-4" /> Upload image</Button>
+                <Button size="sm" className="h-9">
+                  <Upload className="h-4 w-4" /> Upload image
+                </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
@@ -290,7 +288,15 @@ function MediaPage() {
   );
 }
 
-function MediaCard({ media, onEdit, onDelete }: { media: MediaDto; onEdit: () => void; onDelete: () => void }) {
+function MediaCard({
+  media,
+  onEdit,
+  onDelete,
+}: {
+  media: MediaDto;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
   return (
     <div className="overflow-hidden rounded-lg border bg-surface transition-shadow hover:shadow-raised">
       <div className="aspect-[4/3] overflow-hidden bg-surface-muted">

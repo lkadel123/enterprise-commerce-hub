@@ -8,16 +8,8 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import { sendSuccess } from "../../utils/ApiResponse.js";
 import { OAuthProviderError, UnverifiedEmailError } from "./social/oauth-shared.js";
 import { unauthorized } from "../../utils/ApiError.js";
-import {
-  exchangeFacebookCode,
-  facebookAuthUrl,
-  isFacebookConfigured,
-} from "./social/facebook.js";
-import {
-  exchangeGoogleCode,
-  googleAuthUrl,
-  isGoogleConfigured,
-} from "./social/google.js";
+import { exchangeFacebookCode, facebookAuthUrl, isFacebookConfigured } from "./social/facebook.js";
+import { exchangeGoogleCode, googleAuthUrl, isGoogleConfigured } from "./social/google.js";
 import { isSocialProvider, type SocialProvider } from "./customerSocialAccount.model.js";
 import {
   CUSTOMER_OAUTH_CONSENT_COOKIE_NAME,
@@ -196,7 +188,10 @@ function clientMeta(req: Request): CustomerAuthContext {
 }
 
 /** Issues the SAME session cookies as the password login/register flows. */
-function setSessionCookies(res: Response, result: { refreshToken: string; remember: boolean }): void {
+function setSessionCookies(
+  res: Response,
+  result: { refreshToken: string; remember: boolean },
+): void {
   res.cookie(
     CUSTOMER_REFRESH_COOKIE_NAME,
     result.refreshToken,
@@ -395,22 +390,14 @@ const acceptTermsHandler: RequestHandler = asyncHandler(async (req, res) => {
   if (!identity) {
     // Single-use: clear even on failure so a stale/expired consent can never
     // be retried.
-    res.clearCookie(
-      CUSTOMER_OAUTH_CONSENT_COOKIE_NAME,
-      clearCustomerOAuthConsentCookieOptions(),
-    );
-    throw unauthorized(
-      "Your sign-in session expired. Please sign in with the provider again.",
-    );
+    res.clearCookie(CUSTOMER_OAUTH_CONSENT_COOKIE_NAME, clearCustomerOAuthConsentCookieOptions());
+    throw unauthorized("Your sign-in session expired. Please sign in with the provider again.");
   }
 
   const result = await acceptSocialTermsAndCreate(identity, clientMeta(req));
 
   // Single-use consumed + same session cookies as password register/login.
-  res.clearCookie(
-    CUSTOMER_OAUTH_CONSENT_COOKIE_NAME,
-    clearCustomerOAuthConsentCookieOptions(),
-  );
+  res.clearCookie(CUSTOMER_OAUTH_CONSENT_COOKIE_NAME, clearCustomerOAuthConsentCookieOptions());
   res.cookie(
     CUSTOMER_REFRESH_COOKIE_NAME,
     result.refreshToken,

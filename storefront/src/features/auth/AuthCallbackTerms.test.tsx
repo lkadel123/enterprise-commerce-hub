@@ -79,9 +79,7 @@ describe("auth callback Terms consent", () => {
     mockCallbackSearch = { terms: true, redirect: "/checkout" };
     renderCallback();
 
-    expect(
-      await screen.findByRole("heading", { name: /almost done/i }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /almost done/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /terms & conditions/i })).toHaveAttribute(
       "href",
       "/terms",
@@ -113,9 +111,7 @@ describe("auth callback Terms consent", () => {
     await acceptConsent();
 
     await waitFor(() =>
-      expect(navigateMock).toHaveBeenCalledWith(
-        expect.objectContaining({ to: "/checkout" }),
-      ),
+      expect(navigateMock).toHaveBeenCalledWith(expect.objectContaining({ to: "/checkout" })),
     );
   });
 
@@ -126,8 +122,6 @@ describe("auth callback Terms consent", () => {
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: /sign-in unsuccessful/i })).toBeInTheDocument(),
     );
-    expect(
-      screen.queryByRole("checkbox", { name: /terms & conditions/i }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: /terms & conditions/i })).not.toBeInTheDocument();
   });
 });

@@ -1,6 +1,19 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { ReactNode } from "react";
-import type { ModulePermission, PermissionAction, PermissionModule, UserDto } from "@/lib/api/types";
+import type {
+  ModulePermission,
+  PermissionAction,
+  PermissionModule,
+  UserDto,
+} from "@/lib/api/types";
 
 import { adminAuthApi } from "@/lib/api/auth";
 import { configureAdminClient, setAccessToken } from "@/lib/api/client";
@@ -41,11 +54,14 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const restoringRef = useRef(true);
   const refreshInFlight = useRef(false);
 
-  const applyProfile = useCallback((profile: { user: UserDto; permissions: ModulePermission[] }) => {
-    setUser(profile.user);
-    setPermissions(profile.permissions ?? []);
-    setStatus("authenticated");
-  }, []);
+  const applyProfile = useCallback(
+    (profile: { user: UserDto; permissions: ModulePermission[] }) => {
+      setUser(profile.user);
+      setPermissions(profile.permissions ?? []);
+      setStatus("authenticated");
+    },
+    [],
+  );
 
   const clearSession = useCallback(() => {
     setAccessToken(null);

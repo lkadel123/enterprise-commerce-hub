@@ -17,11 +17,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiErrorMessage } from "@/lib/api/client";
 import { useSubmitReviewMutation } from "@/features/account/account-hooks";
 
-
 const reviewSchema = z.object({
   rating: z.coerce.number().int().min(1, "Select a rating (1–5).").max(5),
   title: z.string().trim().max(200).optional(),
-  body: z.string().trim().min(1, "Please write a short review.").max(2000, "Maximum 2000 characters."),
+  body: z
+    .string()
+    .trim()
+    .min(1, "Please write a short review.")
+    .max(2000, "Maximum 2000 characters."),
 });
 
 type ReviewFormValues = z.infer<typeof reviewSchema>;
@@ -136,11 +139,7 @@ export function ReviewForm({ orderId, productId, productName, onSubmitted }: Rev
         />
 
         {serverMessage ? (
-          <p
-            role="status"
-            aria-live="polite"
-            className="text-sm font-medium text-muted-foreground"
-          >
+          <p role="status" aria-live="polite" className="text-sm font-medium text-muted-foreground">
             {serverMessage}
           </p>
         ) : null}

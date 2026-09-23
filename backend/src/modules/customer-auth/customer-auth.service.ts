@@ -1,6 +1,12 @@
 import { randomBytes } from "node:crypto";
 import { Types } from "mongoose";
-import { badRequest, conflict, invalidCredentials, serviceUnavailable, unauthorized } from "../../utils/ApiError.js";
+import {
+  badRequest,
+  conflict,
+  invalidCredentials,
+  serviceUnavailable,
+  unauthorized,
+} from "../../utils/ApiError.js";
 import { hashPassword, verifyPassword } from "../../utils/password.js";
 import { hashToken } from "../../utils/jwt.js";
 import { env } from "../../config/env.js";
@@ -404,9 +410,7 @@ async function forgotPassword(
   // delivered is a dead end for the customer. When SMTP is not configured the
   // operation errors out and nothing is written.
   if (!smtpEnabled()) {
-    throw serviceUnavailable(
-      "Password reset by email is not available. Please contact support.",
-    );
+    throw serviceUnavailable("Password reset by email is not available. Please contact support.");
   }
 
   await CustomerAccountModel.updateOne(

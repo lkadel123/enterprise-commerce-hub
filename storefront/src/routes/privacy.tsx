@@ -133,7 +133,11 @@ function PrivacyPage() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        See also our <Link to="/terms" className="font-medium text-primary underline underline-offset-2">Terms &amp; Conditions</Link>.
+        See also our{" "}
+        <Link to="/terms" className="font-medium text-primary underline underline-offset-2">
+          Terms &amp; Conditions
+        </Link>
+        .
       </p>
     </section>
   );

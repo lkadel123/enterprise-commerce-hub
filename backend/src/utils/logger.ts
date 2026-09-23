@@ -8,10 +8,7 @@ import { env, isProduction } from "../config/env.js";
  * so the HTTP logger wiring and its regression tests share one source of
  * truth: Authorization headers and cookies carry bearer/refresh tokens.
  */
-export const LOG_REDACT_PATHS = [
-  "req.headers.authorization",
-  "req.headers.cookie",
-] as const;
+export const LOG_REDACT_PATHS = ["req.headers.authorization", "req.headers.cookie"] as const;
 
 /** Value substituted for every redacted path. */
 export const LOG_REDACT_CENSOR = "***";

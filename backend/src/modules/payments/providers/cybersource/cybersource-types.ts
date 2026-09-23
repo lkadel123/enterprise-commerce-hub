@@ -5,13 +5,13 @@
  */
 /** API hosts — centralised; never hardcode an environment URL elsewhere. */
 export const CYBERSOURCE_API_HOSTS = {
-    test: "https://apitest.cybersource.com",
-    production: "https://api.cybersource.com",
+  test: "https://apitest.cybersource.com",
+  production: "https://api.cybersource.com",
 };
 /** Hosts serving the Cybersource public keys (JWKS) used to verify signed tokens. */
 export const CYBERSOURCE_JWKS_HOSTS = {
-    test: "apitest.cybersource.com",
-    production: "api.cybersource.com",
+  test: "apitest.cybersource.com",
+  production: "api.cybersource.com",
 };
 /**
  * Hosts allowed to serve the Flex / Unified Checkout client JS bundle.
@@ -22,9 +22,9 @@ export const CYBERSOURCE_JWKS_HOSTS = {
  * - testup./up. hosts serve the current (clientVersion 1.x) bundle.
  */
 export const CYBERSOURCE_CLIENT_LIBRARY_HOSTS = new Set([
-    "flex.cybersource.com",
-    "testflex.cybersource.com",
-    "flex.test.cybersource.com",
-    "up.cybersource.com",
-    "testup.cybersource.com",
+  "flex.cybersource.com",
+  "testflex.cybersource.com",
+  "flex.test.cybersource.com",
+  "up.cybersource.com",
+  "testup.cybersource.com",
 ]);

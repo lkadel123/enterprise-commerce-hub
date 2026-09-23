@@ -100,10 +100,7 @@ describe("BrandCard", () => {
 
   it("falls back to the store icon when there is no logo", () => {
     const { container } = render(<BrandCard brand={NO_LOGO_BRAND} />);
-    expect(screen.getByRole("link", { name: /plain/i })).toHaveAttribute(
-      "href",
-      "/brands/plain",
-    );
+    expect(screen.getByRole("link", { name: /plain/i })).toHaveAttribute("href", "/brands/plain");
     expect(container.querySelector("img")).toBeNull();
   });
 });

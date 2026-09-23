@@ -21,7 +21,10 @@ import {
   createCaptureContext,
   newMerchantReference,
 } from "../src/modules/payments/providers/cybersource/cybersource-session.js";
-import { decodeJwtPayload, verifyCybersourceToken } from "../src/modules/payments/providers/cybersource/cybersource-token.js";
+import {
+  decodeJwtPayload,
+  verifyCybersourceToken,
+} from "../src/modules/payments/providers/cybersource/cybersource-token.js";
 
 function pass(name: string, detail: string): void {
   console.log(`  PASS  ${name} — ${detail}`);
@@ -39,7 +42,10 @@ async function main(): Promise<void> {
   console.log("=== Cybersource UAT probe (server-side, non-mock) ===\n");
 
   if (!cybersourceConfig.isConfigured()) {
-    blocked("credentials", "CYBERSOURCE_MERCHANT_ID / KEY_ID / SHARED_SECRET missing — set them and re-run.");
+    blocked(
+      "credentials",
+      "CYBERSOURCE_MERCHANT_ID / KEY_ID / SHARED_SECRET missing — set them and re-run.",
+    );
     process.exit(2);
   }
 
@@ -98,9 +104,16 @@ async function main(): Promise<void> {
     pass("client library host", host);
   }
   if (Array.isArray(clientLibrary) && typeof clientLibrary[1] === "string") {
-    console.log(`  INFO  legacy-format integrity present (${String(clientLibrary[1]).length} chars)`);
-  } else if (typeof ctxEntry?.data?.clientLibraryIntegrity === "string" && ctxEntry.data.clientLibraryIntegrity) {
-    console.log(`  INFO  clientLibraryIntegrity present (${ctxEntry.data.clientLibraryIntegrity.length} chars)`);
+    console.log(
+      `  INFO  legacy-format integrity present (${String(clientLibrary[1]).length} chars)`,
+    );
+  } else if (
+    typeof ctxEntry?.data?.clientLibraryIntegrity === "string" &&
+    ctxEntry.data.clientLibraryIntegrity
+  ) {
+    console.log(
+      `  INFO  clientLibraryIntegrity present (${ctxEntry.data.clientLibraryIntegrity.length} chars)`,
+    );
   } else {
     console.log("  INFO  clientLibraryIntegrity absent (context format dependent)");
   }

@@ -66,7 +66,9 @@ function OrderDetail() {
   if (orderQuery.isError || !order) {
     return (
       <AppShell>
-        <p className="text-sm text-destructive">Couldn't load this order. It may not exist or you may lack permission.</p>
+        <p className="text-sm text-destructive">
+          Couldn't load this order. It may not exist or you may lack permission.
+        </p>
       </AppShell>
     );
   }
@@ -76,7 +78,9 @@ function OrderDetail() {
   return (
     <AppShell>
       <Button asChild variant="ghost" size="sm" className="mb-3 -ml-2 h-8">
-        <Link to="/orders"><ArrowLeft className="h-4 w-4" /> Back to orders</Link>
+        <Link to="/orders">
+          <ArrowLeft className="h-4 w-4" /> Back to orders
+        </Link>
       </Button>
 
       <PageHeader
@@ -88,7 +92,9 @@ function OrderDetail() {
               <Printer className="h-4 w-4" /> Print invoice
             </Button>
             <Button
-              variant="outline" size="sm" className="h-9"
+              variant="outline"
+              size="sm"
+              className="h-9"
               disabled={refund.isPending || order.payment.status !== "Paid"}
               onClick={() => act(() => refund.mutateAsync({ id: order.id }), "Refund requested")}
             >
@@ -96,9 +102,15 @@ function OrderDetail() {
             </Button>
             {nextStatus && (
               <Button
-                size="sm" className="h-9"
+                size="sm"
+                className="h-9"
                 disabled={updateStatus.isPending}
-                onClick={() => act(() => updateStatus.mutateAsync({ id: order.id, status: nextStatus }), `Order marked ${nextStatus}`)}
+                onClick={() =>
+                  act(
+                    () => updateStatus.mutateAsync({ id: order.id, status: nextStatus }),
+                    `Order marked ${nextStatus}`,
+                  )
+                }
               >
                 Mark {nextStatus}
               </Button>
@@ -110,11 +122,15 @@ function OrderDetail() {
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="card-surface p-4">
           <p className="text-label">Order status</p>
-          <div className="mt-2"><StatusBadge status={order.status} /></div>
+          <div className="mt-2">
+            <StatusBadge status={order.status} />
+          </div>
         </div>
         <div className="card-surface p-4">
           <p className="text-label">Payment status</p>
-          <div className="mt-2"><StatusBadge status={order.payment.status} /></div>
+          <div className="mt-2">
+            <StatusBadge status={order.payment.status} />
+          </div>
         </div>
         <div className="card-surface p-4">
           <p className="text-label">Fulfilment</p>
@@ -155,7 +171,9 @@ function OrderDetail() {
                       <td className="num px-4 py-3 text-muted-foreground">{it.sku}</td>
                       <td className="num px-4 py-3 text-right">{it.qty}</td>
                       <td className="num px-4 py-3 text-right">{formatNpr(it.unitPrice)}</td>
-                      <td className="num px-4 py-3 text-right font-medium">{formatNpr(it.lineTotal)}</td>
+                      <td className="num px-4 py-3 text-right font-medium">
+                        {formatNpr(it.lineTotal)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -170,13 +188,17 @@ function OrderDetail() {
                 <li key={t.label} className="relative">
                   <span
                     className={`absolute -left-6 grid h-6 w-6 place-items-center rounded-full border ${
-                      t.done ? "border-primary bg-primary text-primary-foreground" : "bg-surface text-muted-foreground"
+                      t.done
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "bg-surface text-muted-foreground"
                     }`}
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" />
                   </span>
                   <p className="text-sm font-medium">{t.label}</p>
-                  <p className="num text-xs text-muted-foreground">{new Date(t.at).toLocaleString()}</p>
+                  <p className="num text-xs text-muted-foreground">
+                    {new Date(t.at).toLocaleString()}
+                  </p>
                 </li>
               ))}
             </ol>
@@ -186,10 +208,22 @@ function OrderDetail() {
         <div className="space-y-4">
           <Section title="Order summary">
             <dl className="space-y-2 text-sm">
-              <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd className="num">{formatNpr(order.amounts.subtotal)}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">Discount</dt><dd className="num">-{formatNpr(order.amounts.discount)}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">Shipping</dt><dd className="num">{formatNpr(order.amounts.shipping)}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">Tax</dt><dd className="num">{formatNpr(order.amounts.tax)}</dd></div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Subtotal</dt>
+                <dd className="num">{formatNpr(order.amounts.subtotal)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Discount</dt>
+                <dd className="num">-{formatNpr(order.amounts.discount)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Shipping</dt>
+                <dd className="num">{formatNpr(order.amounts.shipping)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Tax</dt>
+                <dd className="num">{formatNpr(order.amounts.tax)}</dd>
+              </div>
               <Separator />
               <div className="flex justify-between text-base font-semibold">
                 <dt>Total</dt>
@@ -202,15 +236,28 @@ function OrderDetail() {
             <p className="text-sm font-medium">{order.customer?.name ?? "Guest"}</p>
             <p className="text-sm text-muted-foreground">{order.email}</p>
             {order.customer && (
-              <p className="num mt-1 text-xs text-muted-foreground">Customer ID: {order.customer.id}</p>
+              <p className="num mt-1 text-xs text-muted-foreground">
+                Customer ID: {order.customer.id}
+              </p>
             )}
             <Separator className="my-3" />
             <div className="space-y-3 text-sm">
               <div>
-                <p className="text-label flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> Shipping address</p>
+                <p className="text-label flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5" /> Shipping address
+                </p>
                 <p className="mt-1 text-muted-foreground">
                   {order.addresses.shipping
-                    ? [order.addresses.shipping.line1, order.addresses.shipping.line2, order.addresses.shipping.city, order.addresses.shipping.state, order.addresses.shipping.postalCode, order.addresses.shipping.country].filter(Boolean).join(", ")
+                    ? [
+                        order.addresses.shipping.line1,
+                        order.addresses.shipping.line2,
+                        order.addresses.shipping.city,
+                        order.addresses.shipping.state,
+                        order.addresses.shipping.postalCode,
+                        order.addresses.shipping.country,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")
                     : "—"}
                 </p>
               </div>
@@ -218,7 +265,13 @@ function OrderDetail() {
                 <p className="text-label">Billing address</p>
                 <p className="mt-1 text-muted-foreground">
                   {order.addresses.billing
-                    ? [order.addresses.billing.line1, order.addresses.billing.city, order.addresses.billing.country].filter(Boolean).join(", ")
+                    ? [
+                        order.addresses.billing.line1,
+                        order.addresses.billing.city,
+                        order.addresses.billing.country,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")
                     : "Same as shipping address"}
                 </p>
               </div>
@@ -227,17 +280,34 @@ function OrderDetail() {
 
           <Section title="Payment">
             <dl className="space-y-2 text-sm">
-              <div className="flex justify-between"><dt className="text-muted-foreground">Method</dt><dd>{order.payment.method}</dd></div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Method</dt>
+                <dd>{order.payment.method}</dd>
+              </div>
               {order.payment.provider ? (
-                <div className="flex justify-between"><dt className="text-muted-foreground">Provider</dt><dd>{order.payment.provider}</dd></div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Provider</dt>
+                  <dd>{order.payment.provider}</dd>
+                </div>
               ) : null}
               {order.payment.transactionId ? (
-                <div className="flex justify-between"><dt className="text-muted-foreground">Transaction ID</dt><dd className="num">{order.payment.transactionId}</dd></div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Transaction ID</dt>
+                  <dd className="num">{order.payment.transactionId}</dd>
+                </div>
               ) : null}
               {order.payment.amount !== undefined ? (
-                <div className="flex justify-between"><dt className="text-muted-foreground">Amount</dt><dd className="num">{formatNpr(order.payment.amount)}</dd></div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Amount</dt>
+                  <dd className="num">{formatNpr(order.payment.amount)}</dd>
+                </div>
               ) : null}
-              <div className="flex justify-between"><dt className="text-muted-foreground">Status</dt><dd><StatusBadge status={order.payment.status} /></dd></div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Status</dt>
+                <dd>
+                  <StatusBadge status={order.payment.status} />
+                </dd>
+              </div>
             </dl>
           </Section>
         </div>

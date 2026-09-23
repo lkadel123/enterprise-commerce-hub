@@ -14,7 +14,11 @@ import { pageHead } from "@/lib/seo";
  * rather than failing hard (the user can simply request a fresh link).
  */
 const resetSearchSchema = z.object({
-  requestId: z.string().regex(/^[0-9a-f]{64}$/i).optional().catch(undefined),
+  requestId: z
+    .string()
+    .regex(/^[0-9a-f]{64}$/i)
+    .optional()
+    .catch(undefined),
   token: z.string().min(1).max(256).optional().catch(undefined),
 });
 
@@ -54,9 +58,7 @@ function ResetPasswordPage() {
         </h1>
 
         <div className="mt-8">
-          <ResetPasswordForm
-            {...(requestId && token ? { requestId, token } : {})}
-          />
+          <ResetPasswordForm {...(requestId && token ? { requestId, token } : {})} />
         </div>
       </div>
     </section>

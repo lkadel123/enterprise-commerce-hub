@@ -66,13 +66,29 @@ export const ordersApi = {
   },
 
   // TanStack Query hooks
-  useList: (params: OrderListParams = {}, options?: { enabled?: boolean; refetchInterval?: number | false; staleTime?: number; retry?: boolean | number }) =>
+  useList: (
+    params: OrderListParams = {},
+    options?: {
+      enabled?: boolean;
+      refetchInterval?: number | false;
+      staleTime?: number;
+      retry?: boolean | number;
+    },
+  ) =>
     useQuery({
       queryKey: ["admin", "orders", params],
       queryFn: () => ordersApi.list(params),
       ...options,
     }),
-  useDetail: (id: string, options?: { enabled?: boolean; refetchInterval?: number | false; staleTime?: number; retry?: boolean | number }) =>
+  useDetail: (
+    id: string,
+    options?: {
+      enabled?: boolean;
+      refetchInterval?: number | false;
+      staleTime?: number;
+      retry?: boolean | number;
+    },
+  ) =>
     useQuery({
       queryKey: ["admin", "orders", id],
       queryFn: () => ordersApi.getById(id),
@@ -85,8 +101,14 @@ export const ordersApi = {
     }),
   useSetPayment: () =>
     useMutation({
-      mutationFn: ({ id, ...body }: { id: string; paymentStatus: PaymentStatus; transactionId?: string }) =>
-        ordersApi.setPaymentStatus(id, body).then((r) => r.data),
+      mutationFn: ({
+        id,
+        ...body
+      }: {
+        id: string;
+        paymentStatus: PaymentStatus;
+        transactionId?: string;
+      }) => ordersApi.setPaymentStatus(id, body).then((r) => r.data),
     }),
   useCancel: () =>
     useMutation({
@@ -96,7 +118,12 @@ export const ordersApi = {
   useRefund: () =>
     useMutation({
       mutationFn: ({ id, amount, reason }: { id: string; amount?: number; reason?: string }) =>
-        ordersApi.refund(id, { ...(amount === undefined ? {} : { amount }), ...(reason === undefined ? {} : { reason }) }).then((r) => r.data),
+        ordersApi
+          .refund(id, {
+            ...(amount === undefined ? {} : { amount }),
+            ...(reason === undefined ? {} : { reason }),
+          })
+          .then((r) => r.data),
     }),
 };
 
@@ -124,7 +151,9 @@ export const customersApi = {
 
 /** Coupons â€” mirrors `backend/src/modules/coupons` (marketing RBAC). */
 export const couponsApi = {
-  list(params: { q?: string; type?: string; page?: number; pageSize?: number; sort?: string } = {}): Promise<ApiEnvelope<CouponDto[]>> {
+  list(
+    params: { q?: string; type?: string; page?: number; pageSize?: number; sort?: string } = {},
+  ): Promise<ApiEnvelope<CouponDto[]>> {
     return adminFetch<CouponDto[]>(`/coupons${buildQuery({ ...params })}`);
   },
   getById(id: string): Promise<ApiEnvelope<CouponDto>> {
@@ -224,7 +253,12 @@ export const usersApi = {
 // TanStack Query hooks (query keys follow src/lib/api/queryKeys.ts)
 // ---------------------------------------------------------------------------
 
-type HookOptions = { enabled?: boolean; refetchInterval?: number | false; staleTime?: number; retry?: boolean | number };
+type HookOptions = {
+  enabled?: boolean;
+  refetchInterval?: number | false;
+  staleTime?: number;
+  retry?: boolean | number;
+};
 
 export const customersQueryApi = {
   useList: (params: CustomerListParams = {}, options?: HookOptions) =>
@@ -343,7 +377,8 @@ export const mediaQueryApi = {
   useUpload: () => {
     const queryClient = useQueryClient();
     return useMutation({
-      mutationFn: ({ file, alt }: { file: File; alt?: string }) => mediaApi.upload(file, alt).then((r) => r.data),
+      mutationFn: ({ file, alt }: { file: File; alt?: string }) =>
+        mediaApi.upload(file, alt).then((r) => r.data),
       onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin", "media"] }),
     });
   },

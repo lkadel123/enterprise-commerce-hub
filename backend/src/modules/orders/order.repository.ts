@@ -103,7 +103,7 @@ export const orderRepository = {
       .lean()
       .exec()) as unknown as OrderRecord | null;
   },
-/** Find an order by the gateway payment id (stored in `payment.transactionId`). */
+  /** Find an order by the gateway payment id (stored in `payment.transactionId`). */
   async findByPaymentId(paymentId: string): Promise<OrderRecord | null> {
     return (await OrderModel.findOne({ "payment.transactionId": paymentId })
       .populate("customer", "name email")

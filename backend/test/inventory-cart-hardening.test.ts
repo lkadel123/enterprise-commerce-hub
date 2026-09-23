@@ -167,7 +167,7 @@ describe("Phase 15: stale-stock cart protection", () => {
     // Inventory drops externally to 2.
     await InventoryModel.updateOne(
       { product: product._id, warehouse: WAREHOUSE },
-      { $set: { stock: 2 } }
+      { $set: { stock: 2 } },
     ).exec();
 
     // Checkout with stale quantity must be rejected by server-side validation.
@@ -190,14 +190,16 @@ describe("Phase 15: stale-stock cart protection", () => {
     const productId = product._id.toString();
     const header = (await customerHeader("gone@test.com")).header;
 
-    await request(app)
-      .post("/api/v1/cart/items")
-      .set(header)
-      .send({ productId, quantity: 1 });
+    await request(app).post("/api/v1/cart/items").set(header).send({ productId, quantity: 1 });
 
     // Simulate product removal/unavailability.
     const ProductModel = (await import("../src/modules/products/product.model.js"))
-      .ProductModel as { updateOne: Function };
+      .ProductModel as {
+      updateOne: (
+        filter: Record<string, unknown>,
+        update: Record<string, unknown>,
+      ) => { exec: () => Promise<unknown> };
+    };
     await ProductModel.updateOne({ _id: product._id }, { $set: { status: "Archived" } }).exec();
 
     const order = await placeOrder(header, productId, 1);

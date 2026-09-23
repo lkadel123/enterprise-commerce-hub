@@ -129,12 +129,10 @@ function BannersPage() {
     }
     act(
       () =>
-        createBanner
-          .mutateAsync(buildBannerPayload(createValues))
-          .then(() => {
-            setCreateOpen(false);
-            setCreateValues(emptyBannerForm);
-          }),
+        createBanner.mutateAsync(buildBannerPayload(createValues)).then(() => {
+          setCreateOpen(false);
+          setCreateValues(emptyBannerForm);
+        }),
       "Banner created",
     );
   };
@@ -171,7 +169,9 @@ function BannersPage() {
         actions={
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="h-9"><Plus className="h-4 w-4" /> New banner</Button>
+              <Button size="sm" className="h-9">
+                <Plus className="h-4 w-4" /> New banner
+              </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
@@ -180,7 +180,10 @@ function BannersPage() {
                   Choose an image from the media library and set visibility and scheduling.
                 </DialogDescription>
               </DialogHeader>
-              <BannerFields values={createValues} onChange={(patch) => setCreateValues((v) => ({ ...v, ...patch }))} />
+              <BannerFields
+                values={createValues}
+                onChange={(patch) => setCreateValues((v) => ({ ...v, ...patch }))}
+              />
               <DialogFooter>
                 <Button size="sm" disabled={createBanner.isPending} onClick={submitCreate}>
                   {createBanner.isPending ? "Creating…" : "Create banner"}
@@ -206,56 +209,80 @@ function BannersPage() {
             </thead>
             <tbody>
               {bannersQuery.isPending ? (
-                <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">Loading banners…</td></tr>
-              ) : bannersQuery.isError ? (
-                <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-destructive">Couldn't load banners. Check your connection and try again.</td></tr>
-              ) : rows.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">No banners yet. Create your first promotion.</td></tr>
-              ) : (
-              rows.map((b) => (
-                <tr key={b.id} className="border-t transition-colors hover:bg-surface-muted/50">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={b.image.url}
-                        alt={b.image.alt ?? b.title}
-                        className="h-10 w-16 shrink-0 rounded-md border object-cover"
-                        loading="lazy"
-                      />
-                      <p className="min-w-0 max-w-[220px] truncate font-medium">{b.title}</p>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3"><StatusBadge status={b.status} /></td>
-                  <td className="num px-4 py-3 text-right">{b.sortOrder}</td>
-                  <td className="num px-4 py-3 whitespace-nowrap text-muted-foreground">
-                    {b.startAt || b.endAt
-                      ? `${b.startAt ? new Date(b.startAt).toLocaleDateString() : "—"} → ${b.endAt ? new Date(b.endAt).toLocaleDateString() : "—"}`
-                      : "Always on"}
-                  </td>
-                  <td className="px-4 py-3">
-                    {b.linkUrl ? (
-                      <a href={b.linkUrl} target="_blank" rel="noreferrer" className="max-w-[200px] truncate text-xs text-primary underline underline-offset-2">
-                        {b.linkUrl}
-                      </a>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => openEdit(b)}>
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-xs text-destructive"
-                      onClick={() => setDeleting(b)}
-                    >
-                      Delete
-                    </Button>
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    Loading banners…
                   </td>
                 </tr>
-              ))
+              ) : bannersQuery.isError ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-destructive">
+                    Couldn't load banners. Check your connection and try again.
+                  </td>
+                </tr>
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    No banners yet. Create your first promotion.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((b) => (
+                  <tr key={b.id} className="border-t transition-colors hover:bg-surface-muted/50">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={b.image.url}
+                          alt={b.image.alt ?? b.title}
+                          className="h-10 w-16 shrink-0 rounded-md border object-cover"
+                          loading="lazy"
+                        />
+                        <p className="min-w-0 max-w-[220px] truncate font-medium">{b.title}</p>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={b.status} />
+                    </td>
+                    <td className="num px-4 py-3 text-right">{b.sortOrder}</td>
+                    <td className="num px-4 py-3 whitespace-nowrap text-muted-foreground">
+                      {b.startAt || b.endAt
+                        ? `${b.startAt ? new Date(b.startAt).toLocaleDateString() : "—"} → ${b.endAt ? new Date(b.endAt).toLocaleDateString() : "—"}`
+                        : "Always on"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {b.linkUrl ? (
+                        <a
+                          href={b.linkUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="max-w-[200px] truncate text-xs text-primary underline underline-offset-2"
+                        >
+                          {b.linkUrl}
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={() => openEdit(b)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs text-destructive"
+                        onClick={() => setDeleting(b)}
+                      >
+                        Delete
+                      </Button>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
@@ -268,7 +295,10 @@ function BannersPage() {
             <DialogTitle>Edit banner</DialogTitle>
             <DialogDescription>Update the image, visibility and scheduling.</DialogDescription>
           </DialogHeader>
-          <BannerFields values={editValues} onChange={(patch) => setEditValues((v) => ({ ...v, ...patch }))} />
+          <BannerFields
+            values={editValues}
+            onChange={(patch) => setEditValues((v) => ({ ...v, ...patch }))}
+          />
           <DialogFooter>
             <Button size="sm" disabled={updateBanner.isPending} onClick={submitEdit}>
               {updateBanner.isPending ? "Saving…" : "Save changes"}
@@ -364,8 +394,13 @@ function BannerFields({
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Status</Label>
-          <Select value={values.status} onValueChange={(v) => onChange({ status: v as BannerStatus })}>
-            <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+          <Select
+            value={values.status}
+            onValueChange={(v) => onChange({ status: v as BannerStatus })}
+          >
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="Active">Active</SelectItem>
               <SelectItem value="Inactive">Inactive</SelectItem>

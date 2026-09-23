@@ -268,9 +268,7 @@ describe("Customer social authentication (Google / Facebook)", () => {
       expect(customerRefreshCookie(res.headers["set-cookie"])).toBeTruthy();
       expect(res.headers["set-cookie"]?.[0]).toContain("HttpOnly");
 
-      const { CURRENT_TERMS_VERSION } = await import(
-        "../src/constants/terms.js"
-      );
+      const { CURRENT_TERMS_VERSION } = await import("../src/constants/terms.js");
       const account = await CustomerAccountModel.findOne({ email: "gl@test.com" }).lean().exec();
       expect(account).toBeTruthy();
       expect(account!.status).toBe("Active");
@@ -599,9 +597,8 @@ describe("Customer social authentication (Google / Facebook)", () => {
 
       // A customer access token from the created account is rejected on admin routes.
       const account = await CustomerAccountModel.findOne({ email: "sec1@test.com" }).lean().exec();
-      const { signCustomerAccessToken } = await import(
-        "../src/modules/customer-auth/customer-token.js"
-      );
+      const { signCustomerAccessToken } =
+        await import("../src/modules/customer-auth/customer-token.js");
       const customerToken = signCustomerAccessToken(account!._id.toString());
       const adminUsers = await request(app)
         .get("/api/v1/users")
@@ -641,13 +638,9 @@ describe("Customer social authentication (Google / Facebook)", () => {
       // is untouched and no second social link exists.
       expect(res.status).toBe(302);
       expect(callbackTarget(res).searchParams.get("error")).toBeNull();
-      const socials = await CustomerSocialAccountModel.find({ provider: "google" })
-        .lean()
-        .exec();
+      const socials = await CustomerSocialAccountModel.find({ provider: "google" }).lean().exec();
       expect(socials).toHaveLength(1);
-      const owner = await CustomerAccountModel.findOne({ email: "owner@test.com" })
-        .lean()
-        .exec();
+      const owner = await CustomerAccountModel.findOne({ email: "owner@test.com" }).lean().exec();
       expect(socials[0]!.accountId.toString()).toBe(owner!._id.toString());
       expect(await CustomerAccountModel.countDocuments({ email: "victim@test.com" })).toBe(1);
     });
@@ -655,9 +648,7 @@ describe("Customer social authentication (Google / Facebook)", () => {
     it("issues the state cookie as HttpOnly (server-side CSRF protection)", async () => {
       const { res } = await startOAuth("google", "/account");
       const setCookies = setCookieValues(res);
-      const stateCookie = setCookies.find((c: string) =>
-        c.startsWith("customer_oauth_state="),
-      );
+      const stateCookie = setCookies.find((c: string) => c.startsWith("customer_oauth_state="));
       expect(stateCookie).toBeTruthy();
       expect(stateCookie).toContain("HttpOnly");
       expect(stateCookie).toContain("SameSite=Lax");
@@ -673,9 +664,7 @@ describe("Customer social authentication (Google / Facebook)", () => {
       const target = callbackTarget(res);
       expect(target.searchParams.get("terms")).toBe("1");
       const setCookies = setCookieValues(res);
-      const consent = setCookies.find((c: string) =>
-        c.startsWith("customer_oauth_consent="),
-      );
+      const consent = setCookies.find((c: string) => c.startsWith("customer_oauth_consent="));
       expect(consent).toBeTruthy();
       expect(consent).toContain("HttpOnly");
       expect(consent).toContain("SameSite=Lax");
@@ -746,9 +735,7 @@ describe("Customer social authentication (Google / Facebook)", () => {
       expect(acceptRes.status).toBe(201);
       const setCookies = setCookieValues(acceptRes);
       // The accept-terms response clears the consent cookie.
-      const cleared = setCookies.find((c: string) =>
-        c.startsWith("customer_oauth_consent="),
-      );
+      const cleared = setCookies.find((c: string) => c.startsWith("customer_oauth_consent="));
       expect(cleared).toBeTruthy();
 
       // A second accept-terms call without a fresh consent is rejected.

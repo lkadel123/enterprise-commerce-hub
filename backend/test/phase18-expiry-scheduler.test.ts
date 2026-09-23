@@ -38,10 +38,13 @@ async function seedCommerce(price = 100) {
 
 async function placeOrder(account: { _id: { toString(): string } }, productId: string) {
   const { header } = customerAccessTokenFor(account);
-  return request(app).post("/api/v1/customer/orders").set(header).send({
-    items: [{ productId, quantity: 1 }],
-    paymentMethod: "Digital Wallet",
-  });
+  return request(app)
+    .post("/api/v1/customer/orders")
+    .set(header)
+    .send({
+      items: [{ productId, quantity: 1 }],
+      paymentMethod: "Digital Wallet",
+    });
 }
 
 /** Places an order then backdates its expiry deadline into the past. */
@@ -49,7 +52,10 @@ async function expiredOrderId(productId: string): Promise<string> {
   const account = await seedCustomerAccount();
   const res = await placeOrder(account, productId);
   const orderId = res.body.data.id;
-  await OrderModel.updateOne({ _id: orderId }, { $set: { expiresAt: new Date(Date.now() - 60_000) } });
+  await OrderModel.updateOne(
+    { _id: orderId },
+    { $set: { expiresAt: new Date(Date.now() - 60_000) } },
+  );
   return orderId;
 }
 
@@ -102,13 +108,16 @@ describe("Phase 18 G18-03 — expiration-scheduler robustness", () => {
   it("does not expire an already-Delivered order", async () => {
     const { product } = await seedCommerce();
     const orderId = await expiredOrderId(product._id.toString());
-    await OrderModel.updateOne({ _id: orderId }, { $set: { status: "Delivered", "payment.status": "Paid" } });
+    await OrderModel.updateOne(
+      { _id: orderId },
+      { $set: { status: "Delivered", "payment.status": "Paid" } },
+    );
     const { expired } = await orderService.expirePendingOrders();
     expect(expired).toHaveLength(0);
     const order = await OrderModel.findById(orderId).lean();
     expect(order?.status).toBe("Delivered");
   });
-it("an already-expired order is safe to process again (idempotent sweep)", async () => {
+  it("an already-expired order is safe to process again (idempotent sweep)", async () => {
     const { product } = await seedCommerce();
     const orderId = await expiredOrderId(product._id.toString());
     const first = await orderService.expirePendingOrders();

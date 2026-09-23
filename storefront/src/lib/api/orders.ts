@@ -34,9 +34,7 @@ export const ordersApi = {
     return apiFetch<ApiEnvelope<OrderDto>>("/customer/orders", {
       method: "POST",
       body,
-      ...(idempotencyKey
-        ? { headers: { "Idempotency-Key": idempotencyKey } }
-        : {}),
+      ...(idempotencyKey ? { headers: { "Idempotency-Key": idempotencyKey } } : {}),
     });
   },
 

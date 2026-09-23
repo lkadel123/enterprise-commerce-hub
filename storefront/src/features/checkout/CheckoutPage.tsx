@@ -50,7 +50,7 @@ export function CheckoutPage() {
 
 function CheckoutContent() {
   const navigate = useNavigate();
-    const cart = useCartQuery();
+  const cart = useCartQuery();
   const placeOrder = usePlaceOrderMutation();
 
   const [step, setStep] = useState(0);
@@ -102,7 +102,7 @@ function CheckoutContent() {
     couponCode?: string;
     notes?: string;
   }) => {
-        placeOrder.mutate(input, {
+    placeOrder.mutate(input, {
       onSuccess: async ({ order }) => {
         toast.success(`Order ${order.orderNumber} placed.`);
         void navigate({

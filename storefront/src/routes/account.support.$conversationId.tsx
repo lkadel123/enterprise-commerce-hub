@@ -287,7 +287,10 @@ function SupportThreadPage() {
                   onSuccess: () => {
                     void queryClient.invalidateQueries({ queryKey: ["support"] });
                     toast.success("Conversation deleted.");
-                    void navigate({ to: "/account/support", search: { relatedOrderId: undefined } });
+                    void navigate({
+                      to: "/account/support",
+                      search: { relatedOrderId: undefined },
+                    });
                   },
                   onError: (err) => toast.error(apiErrorMessage(err)),
                 })

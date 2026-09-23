@@ -130,9 +130,7 @@ describe("Customer password reset", () => {
 
     const mail = sendMailMock.mock.calls[0][0] as { text: string; html: string };
     for (const body of [mail.text, mail.html]) {
-      expect(body).toContain(
-        `${env.PUBLIC_BASE_URL}/reset-password?requestId=${requestId}&token=`,
-      );
+      expect(body).toContain(`${env.PUBLIC_BASE_URL}/reset-password?requestId=${requestId}&token=`);
       // The token is a high-entropy one-time secret: long enough to resist
       // brute force, embedded only in the email (never the API response).
       const tokenInUrl = body.split("token=")[1]?.split(/[\s"'><]/)[0] ?? "";

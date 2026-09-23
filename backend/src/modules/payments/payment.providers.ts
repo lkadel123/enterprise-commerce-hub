@@ -35,7 +35,6 @@ const registry: Partial<Record<SupportedProviders, PaymentProviderInterface>> = 
     : {}),
 };
 
-
 /** Registry mapping provider keys to singleton provider instances. */
 export const paymentProviderMap = registry as Partial<
   Record<SupportedProviders, PaymentProviderInterface>

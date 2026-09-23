@@ -137,32 +137,31 @@ export function PaymentStep({
         <legend className="sr-only">Payment method</legend>
         {METHODS.map((method) => {
           const selected =
-            choice?.method === method.id &&
-            (choice.gateway ?? null) === (choice?.gateway ?? null);
+            choice?.method === method.id && (choice.gateway ?? null) === (choice?.gateway ?? null);
           return (
-          <label
-            key={method.key}
-            className="flex min-h-[44px] cursor-pointer items-start gap-3 rounded-md border p-3 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
-          >
-            <input
-              type="radio"
-              name="payment-method"
-              className="mt-1 h-4 w-4"
-              checked={selected}
-              onChange={() =>
-                onChoiceChange(
-                  method.gateway
-                    ? { method: method.id, gateway: method.gateway }
-                    : { method: method.id },
-                )
-              }
-            />
-            <span className="text-sm">
-              <span className="font-medium">{method.label}</span>
-              <br />
-              <span className="text-muted-foreground">{method.hint}</span>
-            </span>
-          </label>
+            <label
+              key={method.key}
+              className="flex min-h-[44px] cursor-pointer items-start gap-3 rounded-md border p-3 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
+            >
+              <input
+                type="radio"
+                name="payment-method"
+                className="mt-1 h-4 w-4"
+                checked={selected}
+                onChange={() =>
+                  onChoiceChange(
+                    method.gateway
+                      ? { method: method.id, gateway: method.gateway }
+                      : { method: method.id },
+                  )
+                }
+              />
+              <span className="text-sm">
+                <span className="font-medium">{method.label}</span>
+                <br />
+                <span className="text-muted-foreground">{method.hint}</span>
+              </span>
+            </label>
           );
         })}
       </fieldset>
@@ -171,8 +170,8 @@ export function PaymentStep({
         <p className="mt-3 flex min-h-[44px] items-center gap-2 rounded-md border bg-muted px-3 text-sm text-muted-foreground">
           <span aria-hidden="true">💳</span>
           <span>
-            Card payments are processed securely through Cybersource Unified Checkout after you place
-            your order.
+            Card payments are processed securely through Cybersource Unified Checkout after you
+            place your order.
           </span>
         </p>
       ) : null}
@@ -273,8 +272,8 @@ export function PaymentStep({
       </div>
       {!canContinue ? (
         <p className="mt-2 text-sm text-muted-foreground">
-          Select a payment method{choice?.method === "Credit Card" ? " (card is confirmed at checkout)" : ""} to
-          continue.
+          Select a payment method
+          {choice?.method === "Credit Card" ? " (card is confirmed at checkout)" : ""} to continue.
         </p>
       ) : null}
     </section>

@@ -24,7 +24,9 @@ import { ProductCard } from "@/features/catalog/ProductCard";
 function SectionIndex({ index, label }: { index: string; label: string }) {
   return (
     <div className="flex items-center gap-4">
-      <span className="font-serif text-sm font-semibold tracking-[0.2em] text-dark-gold">{index}</span>
+      <span className="font-serif text-sm font-semibold tracking-[0.2em] text-dark-gold">
+        {index}
+      </span>
       <span className="text-sm font-semibold uppercase tracking-[0.22em] text-muted-text">
         {label}
       </span>
@@ -106,8 +108,8 @@ export function HomeHero() {
         </h1>
         <div className="mt-2 h-px w-24 bg-gold" aria-hidden="true" />
         <p className="max-w-xl text-lg leading-relaxed text-muted-text">
-          Quality without compromise. Premium, human-made goods from Nepal â€” built on craftsmanship,
-          heritage and an uncompromising standard.
+          Quality without compromise. Premium, human-made goods from Nepal â€” built on
+          craftsmanship, heritage and an uncompromising standard.
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-4">
           <Button asChild size="lg">
@@ -208,7 +210,8 @@ export function HomeCraft() {
           </h2>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-ivory/75">
             We believe in material-first design: honest texture, considered detail and restraint.
-            Nothing mass-produced, nothing disposable â€” only pieces with a clear maker behind them.
+            Nothing mass-produced, nothing disposable â€” only pieces with a clear maker behind
+            them.
           </p>
           <div className="mt-10 grid grid-cols-2 gap-6 border-t border-ivory/15 pt-8 text-ivory">
             <div>
@@ -266,7 +269,9 @@ export function HomeFeatured() {
       <div className="flex items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-4">
-            <span className="font-serif text-sm font-semibold tracking-[0.2em] text-dark-gold">04</span>
+            <span className="font-serif text-sm font-semibold tracking-[0.2em] text-dark-gold">
+              04
+            </span>
             <span className="text-sm font-semibold uppercase tracking-[0.22em] text-muted-text">
               The Collection
             </span>

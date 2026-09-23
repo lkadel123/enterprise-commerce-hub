@@ -54,16 +54,19 @@ async function seedDeliveredOrder(
     email: account.email,
     region: "North America",
     warehouse: "Rotterdam DC",
-    items: ((opts.withProduct ?? true) ? [
-      {
-        product: new Types.ObjectId(productId),
-        sku: "REV-SKU",
-        name: "Aurora Monitor",
-        qty: 1,
-        unitPrice: 100,
-        lineTotal: 100,
-      },
-    ] : []),
+    items:
+      (opts.withProduct ?? true)
+        ? [
+            {
+              product: new Types.ObjectId(productId),
+              sku: "REV-SKU",
+              name: "Aurora Monitor",
+              qty: 1,
+              unitPrice: 100,
+              lineTotal: 100,
+            },
+          ]
+        : [],
     amounts: { subtotal: 100, discount: 0, shipping: 12.5, tax: 7.5, total: 120 },
     payment: { method: "Digital Wallet", status: "Paid", provider: "KHALTI" },
     status: opts.status ?? "Delivered",
@@ -97,7 +100,10 @@ describe("Customer reviews (Phase 7 + G18-02)", () => {
     const account = await seedCustomerAccount({ email: "reviewer@test.com" });
     const order = await seedDeliveredOrder(account, product._id.toString());
     const { header } = customerAccessTokenFor(account);
-    const res = await submitReview(header, validReview(product._id.toString(), order._id.toString()));
+    const res = await submitReview(
+      header,
+      validReview(product._id.toString(), order._id.toString()),
+    );
     expect(res.status).toBe(201);
     expect(res.body.data.status).toBe("Pending");
     expect(res.body.data.product.id).toBe(product._id.toString());
@@ -128,7 +134,10 @@ describe("Customer reviews (Phase 7 + G18-02)", () => {
     const product = await seedProductForReview();
     const account = await seedCustomerAccount();
     const { header } = customerAccessTokenFor(account);
-    const res = await submitReview(header, { ...validReview(product._id.toString()), title: "x".repeat(201) });
+    const res = await submitReview(header, {
+      ...validReview(product._id.toString()),
+      title: "x".repeat(201),
+    });
     expect(res.status).toBe(422);
   });
 
@@ -136,7 +145,10 @@ describe("Customer reviews (Phase 7 + G18-02)", () => {
     const product = await seedProductForReview();
     const account = await seedCustomerAccount();
     const { header } = customerAccessTokenFor(account);
-    const res = await submitReview(header, { ...validReview(product._id.toString()), body: "x".repeat(2001) });
+    const res = await submitReview(header, {
+      ...validReview(product._id.toString()),
+      body: "x".repeat(2001),
+    });
     expect(res.status).toBe(422);
   });
 
@@ -175,7 +187,9 @@ describe("Customer reviews (Phase 7 + G18-02)", () => {
 
   it("rejects unauthenticated requests with 401", async () => {
     const product = await seedProductForReview();
-    const res = await request(app).post("/api/v1/customer/reviews").send(validReview(product._id.toString()));
+    const res = await request(app)
+      .post("/api/v1/customer/reviews")
+      .send(validReview(product._id.toString()));
     expect(res.status).toBe(401);
     expect(res.body.error.code).toBe("UNAUTHENTICATED");
   });
@@ -191,7 +205,10 @@ describe("Customer reviews (Phase 7 + G18-02)", () => {
     const product = await seedProductForReview();
     const account = await seedCustomerAccount();
     const { header } = customerAccessTokenFor(account);
-    const res = await submitReview(header, { ...validReview(product._id.toString()), customerId: account._id.toString() });
+    const res = await submitReview(header, {
+      ...validReview(product._id.toString()),
+      customerId: account._id.toString(),
+    });
     expect(res.status).toBe(422);
   });
 
@@ -199,7 +216,10 @@ describe("Customer reviews (Phase 7 + G18-02)", () => {
     const product = await seedProductForReview();
     const account = await seedCustomerAccount();
     const { header } = customerAccessTokenFor(account);
-    const res = await submitReview(header, { ...validReview(product._id.toString()), status: "Approved" });
+    const res = await submitReview(header, {
+      ...validReview(product._id.toString()),
+      status: "Approved",
+    });
     expect(res.status).toBe(422);
   });
 
@@ -207,7 +227,11 @@ describe("Customer reviews (Phase 7 + G18-02)", () => {
     const product = await seedProductForReview();
     const account = await seedCustomerAccount();
     const { header } = customerAccessTokenFor(account);
-    const res = await submitReview(header, { ...validReview(product._id.toString()), total: 5, subtotal: 5 });
+    const res = await submitReview(header, {
+      ...validReview(product._id.toString()),
+      total: 5,
+      subtotal: 5,
+    });
     expect(res.status).toBe(422);
   });
   /* ----------------------------- G18-02 gating ----------------------------- */
@@ -217,7 +241,10 @@ describe("Customer reviews (Phase 7 + G18-02)", () => {
     const account = await seedCustomerAccount();
     const order = await seedDeliveredOrder(account, product._id.toString(), { status: "Pending" });
     const { header } = customerAccessTokenFor(account);
-    const res = await submitReview(header, validReview(product._id.toString(), order._id.toString()));
+    const res = await submitReview(
+      header,
+      validReview(product._id.toString(), order._id.toString()),
+    );
     expect(res.status).toBe(400);
     expect(res.body.error.message).toContain("delivered");
   });
@@ -225,9 +252,14 @@ describe("Customer reviews (Phase 7 + G18-02)", () => {
   it("customer cannot review a Processing order", async () => {
     const product = await seedProductForReview();
     const account = await seedCustomerAccount();
-    const order = await seedDeliveredOrder(account, product._id.toString(), { status: "Processing" });
+    const order = await seedDeliveredOrder(account, product._id.toString(), {
+      status: "Processing",
+    });
     const { header } = customerAccessTokenFor(account);
-    const res = await submitReview(header, validReview(product._id.toString(), order._id.toString()));
+    const res = await submitReview(
+      header,
+      validReview(product._id.toString(), order._id.toString()),
+    );
     expect(res.status).toBe(400);
   });
 
@@ -236,7 +268,10 @@ describe("Customer reviews (Phase 7 + G18-02)", () => {
     const account = await seedCustomerAccount();
     const order = await seedDeliveredOrder(account, product._id.toString(), { status: "Shipped" });
     const { header } = customerAccessTokenFor(account);
-    const res = await submitReview(header, validReview(product._id.toString(), order._id.toString()));
+    const res = await submitReview(
+      header,
+      validReview(product._id.toString(), order._id.toString()),
+    );
     expect(res.status).toBe(400);
     expect(res.body.error.message).toContain("delivered");
   });
@@ -247,7 +282,10 @@ describe("Customer reviews (Phase 7 + G18-02)", () => {
     const other = await seedCustomerAccount({ email: "other-g18@test.com" });
     const order = await seedDeliveredOrder(owner, product._id.toString());
     const { header } = customerAccessTokenFor(other);
-    const res = await submitReview(header, validReview(product._id.toString(), order._id.toString()));
+    const res = await submitReview(
+      header,
+      validReview(product._id.toString(), order._id.toString()),
+    );
     expect(res.status).toBe(404);
     expect(res.body.error.message).toBe("Order not found.");
   });
@@ -256,13 +294,21 @@ describe("Customer reviews (Phase 7 + G18-02)", () => {
     const product = await seedProductForReview();
     const account = await seedCustomerAccount();
     const { header } = customerAccessTokenFor(account);
-    const res = await submitReview(header, validReview(product._id.toString(), new Types.ObjectId().toString()));
+    const res = await submitReview(
+      header,
+      validReview(product._id.toString(), new Types.ObjectId().toString()),
+    );
     expect(res.status).toBe(404);
   });
 
   it("customer cannot review a product not contained in the delivered order", async () => {
     const { category, brand } = await seedCatalog();
-    const productA = await seedProduct(category._id, brand._id, { sku: "REV-SKU", price: 100, cost: 50, status: "Active" });
+    const productA = await seedProduct(category._id, brand._id, {
+      sku: "REV-SKU",
+      price: 100,
+      cost: 50,
+      status: "Active",
+    });
     const productB = await ProductModel.create({
       name: "Meridian Lamp",
       slug: "meridian-lamp",
@@ -277,7 +323,10 @@ describe("Customer reviews (Phase 7 + G18-02)", () => {
     const account = await seedCustomerAccount();
     const order = await seedDeliveredOrder(account, productA._id.toString());
     const { header } = customerAccessTokenFor(account);
-    const res = await submitReview(header, validReview(productB._id.toString(), order._id.toString()));
+    const res = await submitReview(
+      header,
+      validReview(productB._id.toString(), order._id.toString()),
+    );
     expect(res.status).toBe(400);
     expect(res.body.error.message).toContain("not part");
   });
@@ -287,9 +336,15 @@ describe("Customer reviews (Phase 7 + G18-02)", () => {
     const account = await seedCustomerAccount({ email: "dup@test.com" });
     const order = await seedDeliveredOrder(account, product._id.toString());
     const { header } = customerAccessTokenFor(account);
-    const first = await submitReview(header, validReview(product._id.toString(), order._id.toString()));
+    const first = await submitReview(
+      header,
+      validReview(product._id.toString(), order._id.toString()),
+    );
     expect(first.status).toBe(201);
-    const second = await submitReview(header, validReview(product._id.toString(), order._id.toString()));
+    const second = await submitReview(
+      header,
+      validReview(product._id.toString(), order._id.toString()),
+    );
     expect(second.status).toBe(409);
     expect(second.body.error.code).toBe("CONFLICT");
     const count = await ReviewModel.countDocuments({ product: product._id });
@@ -320,7 +375,10 @@ describe("Customer reviews (Phase 7 + G18-02)", () => {
     const before = await request(app).get(`/api/v1/public/reviews?productId=${product._id}`);
     expect(before.status).toBe(200);
     expect(before.body.data).toHaveLength(0);
-    await ReviewModel.updateOne({ product: product._id, status: "Pending" }, { $set: { status: "Approved" } }).exec();
+    await ReviewModel.updateOne(
+      { product: product._id, status: "Pending" },
+      { $set: { status: "Approved" } },
+    ).exec();
     const after = await request(app).get(`/api/v1/public/reviews?productId=${product._id}`);
     expect(after.status).toBe(200);
     expect(after.body.data).toHaveLength(1);
@@ -335,8 +393,14 @@ describe("Customer reviews (Phase 7 + G18-02)", () => {
     const orderB = await seedDeliveredOrder(accountB, product._id.toString());
     const headerA = customerAccessTokenFor(accountA).header;
     const headerB = customerAccessTokenFor(accountB).header;
-    await submitReview(headerA, { ...validReview(product._id.toString(), orderA._id.toString()), title: "A" });
-    await submitReview(headerB, { ...validReview(product._id.toString(), orderB._id.toString()), title: "B" });
+    await submitReview(headerA, {
+      ...validReview(product._id.toString(), orderA._id.toString()),
+      title: "A",
+    });
+    await submitReview(headerB, {
+      ...validReview(product._id.toString(), orderB._id.toString()),
+      title: "B",
+    });
     const res = await request(app).get("/api/v1/customer/reviews").set(headerA);
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(1);

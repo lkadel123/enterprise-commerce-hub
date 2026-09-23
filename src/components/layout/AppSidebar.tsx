@@ -19,11 +19,7 @@ import type { LucideIcon } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -129,8 +125,7 @@ export function AppSidebar() {
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const { hasPermission } = useAdminAuth();
 
-  const isActive = (url: string) =>
-    url === "/" ? pathname === "/" : pathname.startsWith(url);
+  const isActive = (url: string) => (url === "/" ? pathname === "/" : pathname.startsWith(url));
 
   // Permission-aware navigation: items whose backend module the signed-in
   // admin cannot view are hidden (the backend independently enforces RBAC on
@@ -140,9 +135,7 @@ export function AppSidebar() {
       navigation
         .map((group) => ({
           ...group,
-          items: group.items.filter(
-            (item) => !item.module || hasPermission(item.module, "view"),
-          ),
+          items: group.items.filter((item) => !item.module || hasPermission(item.module, "view")),
         }))
         .filter((group) => group.items.length > 0),
     [hasPermission],
@@ -206,10 +199,7 @@ export function AppSidebar() {
                           <SidebarMenuSub>
                             {item.children.map((child) => (
                               <SidebarMenuSubItem key={child.title}>
-                                <SidebarMenuSubButton
-                                  asChild
-                                  isActive={pathname === child.url}
-                                >
+                                <SidebarMenuSubButton asChild isActive={pathname === child.url}>
                                   <Link to={child.url}>
                                     <span>{child.title}</span>
                                   </Link>

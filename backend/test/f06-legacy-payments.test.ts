@@ -17,8 +17,6 @@ import { paymentProviderMap } from "../src/modules/payments/payment.providers.js
 import { paymentService } from "../src/modules/payments/payment.service.js";
 import type { PaymentProviderInterface } from "../src/modules/payments/payment.provider.js";
 
-
-
 const app = getApp();
 
 const realProvider = paymentProviderMap.FONEPAY;
@@ -163,9 +161,9 @@ describe("F-08 — legacy POST /payments/initiate", () => {
     expect(initiateMock).toHaveBeenCalledWith(total, orderId, expect.any(Object));
 
     // Service-level defense in depth: even a direct caller cannot desync the amount.
-    await expect(
-      paymentService.initiatePayment(orderId, "FONEPAY", 1, {}),
-    ).rejects.toThrow(/mismatch/i);
+    await expect(paymentService.initiatePayment(orderId, "FONEPAY", 1, {})).rejects.toThrow(
+      /mismatch/i,
+    );
     expect(initiateMock).toHaveBeenCalledTimes(1);
   });
 
