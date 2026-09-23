@@ -129,6 +129,35 @@ export interface CybersourceCaptureContext {
   clientLibraryIntegrity: string;
 }
 
+/**
+ * Browser origins allowed to embed Unified Checkout, resolved ONLY from
+ * CYBERSOURCE_TARGET_ORIGINS. Values are split on commas, trimmed, empties
+ * removed, validated as URLs, restricted to protocol https:, normalized to
+ * URL.origin and de-duplicated. When no valid HTTPS origin remains (e.g. CI
+ * with the variable unset) a localhost HTTPS placeholder keeps the sessions
+ * request well-formed; the production boot guard in config/env.ts refuses to
+ * start without real https:// origins, so this fallback can never mask a
+ * production misconfiguration.
+ */
+export function getTargetOrigins(): string[] {
+  const raw = (process.env.CYBERSOURCE_TARGET_ORIGINS ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const origins: string[] = [];
+  for (const value of raw) {
+    try {
+      const url = new URL(value);
+      if (url.protocol === "https:" && !origins.includes(url.origin)) {
+        origins.push(url.origin);
+      }
+    } catch {
+      // Malformed entries can never satisfy the sessions API — drop them.
+    }
+  }
+  return origins.length > 0 ? origins : ["https://localhost:3000"];
+}
+
 /** Builds the capture-context request body from server-authoritative data. */
 export function buildCaptureContextRequest(input: CybersourceCaptureContextInput) {
   const billTo: CaptureContextBillTo = {};
@@ -153,7 +182,7 @@ export function buildCaptureContextRequest(input: CybersourceCaptureContextInput
   if (input.customer?.email) billTo.email = input.customer.email;
   if (input.customer?.firstName) billTo.firstName = input.customer.firstName.slice(0, 60);
   if (input.customer?.lastName) billTo.lastName = input.customer.lastName.slice(0, 60);
-  const targetOrigins = cybersourceConfig.targetOrigins();
+  const targetOrigins = getTargetOrigins();
   if (targetOrigins.some((origin) => !origin.startsWith("https:"))) {
     // The Unified Checkout sessions API REJECTS non-HTTPS target origins
     // ("Origin must use HTTPS protocol"). Surfaced as a warning so a missing
