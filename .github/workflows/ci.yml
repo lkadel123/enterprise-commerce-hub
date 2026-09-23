@@ -29,8 +29,12 @@ jobs:
       - run: npm ci
       - run: npm ci --prefix storefront
       - run: npm ci --prefix backend
+      # routeTree.gen.ts is gitignored — generate it before typechecking.
+      - run: npm run generate:routes --prefix storefront
       - name: Lint (root/admin)
         run: npm run lint
+      - name: Design Dashboard typecheck
+        run: npm run typecheck
       - name: Storefront typecheck
         run: npm run typecheck --prefix storefront
       - name: Backend typecheck
@@ -65,6 +69,8 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npm ci --prefix storefront
+      # routeTree.gen.ts is gitignored — generate it before testing.
+      - run: npm run generate:routes --prefix storefront
       - name: Storefront unit / component / integration / contract tests
         run: npm test --prefix storefront
 
@@ -78,6 +84,10 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npm ci --prefix storefront
+      # routeTree.gen.ts is gitignored — generate it before building.
+      - run: npm run generate:routes --prefix storefront
+      - name: Build Design Dashboard (Vite + Nitro SSR)
+        run: npm run build
       - name: Build storefront (Vite + Nitro SSR)
         run: npm run build --prefix storefront
       - name: Bundle size summary (report only — no arbitrary budget gate)

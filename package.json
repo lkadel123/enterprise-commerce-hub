@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "format": "prettier --write .",
     "lab": "node live-lab/start-https-lab.mjs --with-storefront",
     "lab:stop": "node live-lab/stop-lab.mjs"
