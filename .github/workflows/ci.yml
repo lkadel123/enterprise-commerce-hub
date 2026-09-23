@@ -130,7 +130,7 @@ jobs:
             ~/.cache/mongodb-binaries
           key: e2e-bins-${{ runner.os }}-${{ hashFiles('storefront/package-lock.json') }}
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium --prefix storefront
+        run: npx playwright install --with-deps chromium
         working-directory: storefront
       - name: Playwright E2E + axe accessibility
         run: npm run test:e2e --prefix storefront
