@@ -29,12 +29,7 @@ const app = getApp();
  * mock mirrors the real contract (throw on failure) without any network I/O.
  */
 const sendMailMock = vi.fn(
-  async (_mail: {
-    to: string;
-    subject?: string;
-    text?: string;
-    html?: string;
-  }) => undefined,
+  async (_mail: { to: string; subject?: string; text?: string; html?: string }) => undefined,
 );
 const createTransportMock = vi.fn(() => ({ sendMail: sendMailMock }));
 
