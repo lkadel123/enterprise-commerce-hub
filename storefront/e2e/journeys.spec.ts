@@ -88,9 +88,7 @@ test.describe("catalog browsing", () => {
     await page.goto("/");
     // Scoped to the page banner: the brand name also appears outside the
     // header (e.g. footer), which made the unscoped query ambiguous.
-    await expect(
-      page.getByRole("banner").getByRole("link", { name: /nasb/i }),
-    ).toBeVisible();
+    await expect(page.getByRole("banner").getByRole("link", { name: /nasb/i })).toBeVisible();
   });
 
   test("products grid lists products with prices", async ({ page }) => {
@@ -106,25 +104,19 @@ test.describe("catalog browsing", () => {
 });
 
 test.describe("guest to authenticated cart merge", () => {
-  test("a guest cart is merged into the account after login", async ({
-    page,
-    request,
-  }) => {
+  test("a guest cart is merged into the account after login", async ({ page, request }) => {
     // Self-contained: register a dedicated account through the API so this
     // test never depends on the P0 auth suite, another browser context, or
     // module-level account state.
     const email = `cart-${Date.now()}@test.com`;
-    const registration = await request.post(
-      "http://localhost:4000/api/v1/auth/customer/register",
-      {
-        data: {
-          name: "Cart Merge Runner",
-          email,
-          password: PASSWORD,
-          acceptedTerms: true,
-        },
+    const registration = await request.post("http://localhost:4000/api/v1/auth/customer/register", {
+      data: {
+        name: "Cart Merge Runner",
+        email,
+        password: PASSWORD,
+        acceptedTerms: true,
       },
-    );
+    });
     expect(registration.ok()).toBeTruthy();
 
     // As a guest: add an item from a product page (local guest cart).
