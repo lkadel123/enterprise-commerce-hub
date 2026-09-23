@@ -234,7 +234,10 @@ function AuthCallbackPage() {
     return <PageLoader label="Completing sign-in…" />;
   }
 
-  const failureMessage = error ? SOCIAL_AUTH_ERROR_MESSAGE[error] : null;
+  // Defensive: the generated route typing widens the validated search to
+  // `any`, so the guard re-narrows before indexing the message record.
+  // Unknown codes render the generic fallback below (unchanged behaviour).
+  const failureMessage = isSocialAuthError(error) ? SOCIAL_AUTH_ERROR_MESSAGE[error] : null;
 
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col items-center px-4 py-20 sm:py-28 sm:px-6">
