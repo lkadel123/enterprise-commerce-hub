@@ -51,6 +51,36 @@ export async function connectDB(): Promise<void> {
 
     throw error;
   }
+
+  // Make the schema's unique indexes effective before this process serves
+  // traffic (see `ensureIndexes` for why this cannot be left to Mongoose).
+  await ensureIndexes();
+}
+
+/**
+ * Awaits every registered model's index build.
+ *
+ * Mongoose builds `autoIndex` indexes in the background — `mongoose.connect()`
+ * resolves (and the API starts accepting writes) before `createIndexes` has
+ * run, so a write landing in that window is not constrained by the schema's
+ * unique indexes. Worse, if it inserts a duplicate, the index build itself
+ * fails with E11000 and the index stays missing until the next attempt, which
+ * silently disables uniqueness (e.g. the Phase 16B per-customer order
+ * idempotency index).
+ *
+ * A failing build is reported loudly but does not block boot: the connection
+ * itself is healthy, and the idempotency paths additionally recover from
+ * duplicate-key errors at the service layer.
+ */
+export async function ensureIndexes(): Promise<void> {
+  try {
+    await Promise.all(Object.values(mongoose.models).map((model) => model.init()));
+  } catch (error) {
+    logger.error(
+      { mongoError: getMongoErrorDetails(error) },
+      "MongoDB index build failed — unique constraints may not be enforced yet",
+    );
+  }
 }
 
 export async function disconnectDB(): Promise<void> {

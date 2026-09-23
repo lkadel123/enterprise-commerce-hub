@@ -1,4 +1,5 @@
 import { badRequest, notFound, serviceUnavailable } from "../../utils/ApiError.js";
+import { isDuplicateKeyError } from "../../utils/duplicateKey.js";
 import { logger } from "../../utils/logger.js";
 import { couponRepository } from "../coupons/coupon.repository.js";
 import { couponRedemptionRepository } from "../coupons/coupon-redemption.repository.js";
@@ -340,16 +341,22 @@ export const orderService = {
       // Phase 16B: concurrent duplicate create â€” the per-(customer, key) unique
       // index let the other request win. Roll back above undid OUR reserve, so
       // returning the winner's order is consistent and idempotent.
-      if (
-        input.idempotencyKey &&
-        typeof (error as { code?: unknown })?.code === "number" &&
-        (error as { code: number }).code === 11000
-      ) {
+      if (input.idempotencyKey && isDuplicateKeyError(error)) {
         const winner = await orderRepository.findByIdempotencyKey(
           customer._id.toString(),
           input.idempotencyKey,
         );
-        if (winner) return toOrderDto(winner);
+        if (winner) {
+          // Same key with a materially different payload must not silently
+          // replay a different order, exactly like the sequential pre-check.
+          if (
+            input.idempotencyFingerprint &&
+            winner.idempotencyHash !== input.idempotencyFingerprint
+          ) {
+            throw badRequest("Idempotency key already used for a different order payload.");
+          }
+          return toOrderDto(winner);
+        }
       }
       throw error;
     }

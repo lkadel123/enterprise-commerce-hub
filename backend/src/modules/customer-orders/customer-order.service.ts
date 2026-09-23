@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 import { createHash } from "node:crypto";
 import { badRequest, notFound, unauthorized } from "../../utils/ApiError.js";
+import { isDuplicateKeyError } from "../../utils/duplicateKey.js";
 import { CustomerAccountModel } from "../customer-auth/customerAccount.model.js";
 import { customerRepository } from "../customers/customer.repository.js";
 import { cartService } from "../cart/cart.service.js";
@@ -57,6 +58,8 @@ function fingerprintFor(input: CreateCustomerOrderInput): string {
  *  - If the account.email already has a CRM Customer, that record is reused
  *    (prevents duplicates) and linked.
  *  - Otherwise a new CRM Customer is created and linked.
+ *  - If a concurrent request created it first, the duplicate-key error is
+ *    absorbed and the winner's CRM Customer is linked instead.
  *
  * Identity always comes from the authenticated account â€” never from a client
  * supplied id.
@@ -76,13 +79,24 @@ export async function ensureCrmCustomer(customerAccountId: string): Promise<stri
   if (existing) {
     crmCustomerId = existing._id.toString();
   } else {
-    const created = await customerRepository.create({
-      name: account.name,
-      email: account.email,
-      group: "Retail",
-      status: "Active",
-    });
-    crmCustomerId = created._id.toString();
+    try {
+      const created = await customerRepository.create({
+        name: account.name,
+        email: account.email,
+        group: "Retail",
+        status: "Active",
+      });
+      crmCustomerId = created._id.toString();
+    } catch (error) {
+      // Two concurrent checkouts for a brand-new customer race between the
+      // lookup above and this insert (`customers.email` is unique). The loser
+      // must converge on the winner's record instead of failing the checkout
+      // with a 409 "A record with this email already exists."
+      if (!isDuplicateKeyError(error)) throw error;
+      const winner = await customerRepository.findByEmail(account.email);
+      if (!winner) throw error;
+      crmCustomerId = winner._id.toString();
+    }
   }
 
   // Link the CRM Customer and return it. Safe if called more than once.
