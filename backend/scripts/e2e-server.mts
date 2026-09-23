@@ -134,7 +134,10 @@ function makeMockCaptureContextJwt(): string {
   const header = b64url(JSON.stringify({ alg: "RS256", kid: MOCK_KID }));
   const payload = b64url(
     JSON.stringify({
-      ctx: [{ type: "clientLibrary", data: { clientLibrary: [MOCK_CLIENT_LIBRARY_URL, ""] } }],
+      // Current (clientVersion 1.x) capture-context shape: data.clientLibrary
+      // is a plain URL string. (The legacy 0.x array form [url, integrity] is
+      // NOT understood by the storefront's capture-context decoder.)
+      ctx: [{ type: "uc-1.0", data: { clientLibrary: MOCK_CLIENT_LIBRARY_URL } }],
     }),
   );
   return `${header}.${payload}.${b64url("mock-signature")}`;
@@ -171,13 +174,21 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
   if (url.startsWith("https://apitest.cybersource.com/uc/v1/sessions") && init?.body) {
     const body = JSON.parse(String(init.body)) as {
+      // Current sessions schema nests everything under `data` (buildCaptureContextRequest).
+      data?: {
+        clientReferenceInformation?: { code?: string };
+        orderInformation?: { amountDetails?: { totalAmount?: string; currency?: string } };
+      };
+      // Legacy top-level shape — kept so a payload-shape regression on either
+      // side is caught here instead of silently producing an empty reference.
       clientReferenceInformation?: { code?: string };
       orderInformation?: { amountDetails?: { totalAmount?: string; currency?: string } };
     };
+    const source = body.data ?? body;
     lastSessionsRequest = {
-      merchantReference: body.clientReferenceInformation?.code ?? "",
-      totalAmount: body.orderInformation?.amountDetails?.totalAmount ?? "0.00",
-      currency: body.orderInformation?.amountDetails?.currency ?? "USD",
+      merchantReference: source.clientReferenceInformation?.code ?? "",
+      totalAmount: source.orderInformation?.amountDetails?.totalAmount ?? "0.00",
+      currency: source.orderInformation?.amountDetails?.currency ?? "USD",
     };
     return new Response(JSON.stringify({ token: makeMockCaptureContextJwt() }), {
       status: 201,
@@ -197,20 +208,52 @@ const mockGatewayRouter = express.Router();
 // The mock router is front-mounted ahead of the app's JSON body parser (to
 // precede the 404 handler), so it must parse JSON bodies itself.
 mockGatewayRouter.use(express.json());
+// The mock layer is force-moved to the FRONT of the app's middleware stack —
+// ahead of the app's CORS middleware — so its own responses must carry CORS
+// headers: the browser loads uc.js with crossorigin=anonymous and the fake SDK
+// fetches the signed response token from the storefront origin (:8090 → :4000).
+mockGatewayRouter.use((_req: any, res: any, next: any) => {
+  const origin = typeof _req.headers.origin === "string" ? _req.headers.origin : "*";
+  res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Vary", "Origin");
+  next();
+});
 
 /** The fake Unified Checkout client library served as flex.cybersource.com. */
 mockGatewayRouter.get("/uc.js", (_req: any, res: any) => {
   res.type("application/javascript").send(`
-    (async () => {
-      const tokenResponse = await fetch("http://localhost:4000/mock-cybersource/response-token");
-      const { token } = await tokenResponse.json();
-      window.Accept = async () => ({
-        unifiedPayments: async () => ({
-          show: async () => "mock-transient-token",
-          complete: async () => token,
+    // Fake Unified Checkout 1.x SDK. Contract (matches the real bundle and the
+    // storefront's CybersourceCheckout.tsx):
+    //   window.VAS.UnifiedCheckout  — async factory, defined synchronously on
+    //                                script load (the storefront resolves it
+    //                                immediately after the script's load event)
+    //   factory(clientToken)      → instance with createCheckout()
+    //   instance.createCheckout() → surface with mount(container)
+    //   surface.mount(selector)   → resolves with the Cybersource-signed
+    //                                payment response token once "paid"
+    window.VAS = {
+      UnifiedCheckout: async (clientToken) => ({
+        createCheckout: async () => ({
+          mount: async (containerSelector) => {
+            // The real SDK requires the payment container to exist NOW; the
+            // storefront waits for it (waitForContainer) before mounting.
+            if (!document.querySelector(containerSelector)) {
+              throw new Error(
+                "mock SDK: payment container not found: " + containerSelector,
+              );
+            }
+            const tokenResponse = await fetch(
+              "http://localhost:4000/mock-cybersource/response-token",
+            );
+            if (!tokenResponse.ok) {
+              throw new Error("mock SDK: signed response token fetch failed");
+            }
+            const { token } = await tokenResponse.json();
+            return token;
+          },
         }),
-      });
-    })();
+      }),
+    };
   `);
 });
 

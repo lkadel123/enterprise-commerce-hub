@@ -86,7 +86,11 @@ test.describe.serial("P0 auth journeys", () => {
 test.describe("catalog browsing", () => {
   test("home renders the brand link", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("link", { name: /nasb/i })).toBeVisible();
+    // Scoped to the page banner: the brand name also appears outside the
+    // header (e.g. footer), which made the unscoped query ambiguous.
+    await expect(
+      page.getByRole("banner").getByRole("link", { name: /nasb/i }),
+    ).toBeVisible();
   });
 
   test("products grid lists products with prices", async ({ page }) => {
@@ -102,7 +106,27 @@ test.describe("catalog browsing", () => {
 });
 
 test.describe("guest to authenticated cart merge", () => {
-  test("a guest cart is merged into the account after login", async ({ page }) => {
+  test("a guest cart is merged into the account after login", async ({
+    page,
+    request,
+  }) => {
+    // Self-contained: register a dedicated account through the API so this
+    // test never depends on the P0 auth suite, another browser context, or
+    // module-level account state.
+    const email = `cart-${Date.now()}@test.com`;
+    const registration = await request.post(
+      "http://localhost:4000/api/v1/auth/customer/register",
+      {
+        data: {
+          name: "Cart Merge Runner",
+          email,
+          password: PASSWORD,
+          acceptedTerms: true,
+        },
+      },
+    );
+    expect(registration.ok()).toBeTruthy();
+
     // As a guest: add an item from a product page (local guest cart).
     const href = await openFirstProduct(page);
     await page
@@ -111,9 +135,9 @@ test.describe("guest to authenticated cart merge", () => {
       .click();
     await expect(page.getByText(/added to cart/i)).toBeVisible();
 
-    // Sign in - the local cart should merge into the server cart.
+    // Sign in — the local cart should merge into the server cart.
     await page.goto(`/login?redirect=${encodeURIComponent(href)}`);
-    await page.getByLabel("Email").fill(EMAIL);
+    await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(PASSWORD);
     await page.getByRole("button", { name: /sign in/i }).click();
     await expect(page).toHaveURL(new RegExp(href.replace("?", "\\?")));
@@ -148,9 +172,10 @@ test.describe.serial("checkout journeys", () => {
   });
 
   test("COD checkout places an order and shows confirmation + history", async () => {
-    await addFirstProductToCart(page);
-    await expect(page.getByText(/added to cart/i)).toBeVisible();
+    await addFirstProductToCart(page); // waits for the "Added to cart" confirmation.
 
+    // fillAddressAndContinue routes through goToCheckout, which explicitly
+    // verifies the server-backed cart contains a product before checkout.
     await fillAddressAndContinue(page, "12 E2E Road", "Kathmandu");
     await page.getByRole("radio", { name: /cash on delivery/i }).check();
     await page.getByRole("button", { name: /review order/i }).click();
@@ -167,9 +192,11 @@ test.describe.serial("checkout journeys", () => {
     await expect(page.getByText(/ORD-/).first()).toBeVisible();
   });
 
-  test("card checkout completes via the mocked Cybersource checkout and is verified", async ({
-    page,
-  }) => {
+  test("card checkout completes via the mocked Cybersource checkout and is verified", async () => {
+    // NOTE: intentionally uses the serial block's shared `page` (registered
+    // account from beforeAll). Declaring `{ page }` here would shadow it with
+    // a fresh fixture page — a guest context with no session — and the cart
+    // page then renders the guest state with no "Proceed to checkout" link.
     test.info().annotations.push({
       type: "note",
       description:
@@ -190,9 +217,11 @@ test.describe.serial("checkout journeys", () => {
       }),
     );
 
-    await addFirstProductToCart(page);
-    await expect(page.getByText(/added to cart/i)).toBeVisible();
+    await addFirstProductToCart(page); // waits for the "Added to cart" confirmation.
 
+    // No state from the COD test above is relied on: this test adds its own
+    // product, and fillAddressAndContinue → goToCheckout explicitly verifies
+    // the server-backed cart contains a product before checkout.
     await fillAddressAndContinue(page, "13 Gateway Way", "Lalitpur");
     await page.getByRole("radio", { name: /credit \/ debit card/i }).check();
     await page.getByRole("button", { name: /review order/i }).click();

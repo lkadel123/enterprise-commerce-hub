@@ -59,6 +59,9 @@ export async function addFirstProductToCart(page: Page): Promise<string> {
     .getByRole("button", { name: /add to cart/i })
     .first()
     .click();
+  // Explicit confirmation: the cart mutation actually completed before any
+  // further navigation (10s — the toast is near-instant when healthy).
+  await expect(page.getByText(/added to cart/i)).toBeVisible({ timeout: 10_000 });
   return href;
 }
 
@@ -70,15 +73,22 @@ export async function goToCart(page: Page): Promise<void> {
     .first()
     .click();
   await expect(page).toHaveURL(/\/cart/);
+  // The cart query is server-backed and resolves after hydration: wait until
+  // it has completed AND contains an item (a product link). An empty or still
+  // loading cart must never be treated as ready for checkout.
+  await expect(page.locator('a[href^="/products/"]').first()).toBeVisible({
+    timeout: 25_000,
+  });
 }
 
 /** Reach /checkout via the cart page's proceed link (SPA navigation). */
 export async function goToCheckout(page: Page): Promise<void> {
   await goToCart(page);
-  await page
-    .getByRole("link", { name: /proceed to checkout/i })
-    .first()
-    .click();
+  // Wait for the proceed link itself: it only renders once the server-backed
+  // cart query has resolved with items (the checkout flow depends on it).
+  const proceed = page.getByRole("link", { name: /proceed to checkout/i }).first();
+  await expect(proceed).toBeVisible({ timeout: 25_000 });
+  await proceed.click();
   await expect(page).toHaveURL(/\/checkout/);
 }
 
