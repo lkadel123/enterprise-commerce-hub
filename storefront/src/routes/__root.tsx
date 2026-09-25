@@ -7,11 +7,12 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import type { QueryClient } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { useCallback, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { API_BASE_URL } from "../config/env";
 import { AppProviders } from "../app/providers";
+import { useHistoryRestoreSync } from "../lib/history-restore";
 import { Header } from "../components/layout/Header";
 import { Footer } from "../components/layout/Footer";
 import { BreadcrumbNav } from "../components/navigation/BreadcrumbNav";
@@ -140,6 +141,21 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+
+  // Pages restored from the browser's back/forward cache resume a frozen React
+  // tree under a URL the router never observed (a bfcache restore fires only
+  // `pageshow`/`persisted:true`, never `popstate`). Re-apply the restored URL —
+  // and refresh the queries frozen with it — so a back navigation can never
+  // leave the previously visited route rendered under the new URL.
+  // See lib/history-restore.ts for the full contract.
+  const resyncRestoredLocation = useCallback(
+    (href: string) => {
+      void router.navigate({ href, replace: true });
+    },
+    [router],
+  );
+  useHistoryRestoreSync(resyncRestoredLocation, queryClient);
 
   return (
     <AppProviders queryClient={queryClient}>

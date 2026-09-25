@@ -167,7 +167,13 @@ test("product detail supports direct URL, refresh, back and forward", async ({ p
   await expect(addButton).toBeVisible({ timeout: 30_000 });
 
   // Back → listing, forward → detail again.
-  await page.goBack();
+  //
+  // `domcontentloaded` keeps the history traversal deterministic: the back
+  // entry may be a fresh document load or a same-document router navigation,
+  // and the assertions below must run only once the traversal has completed
+  // (the app re-applies bfcache-restored URLs itself — see
+  // src/lib/history-restore.ts).
+  await page.goBack({ waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(/\/products\/?$/);
   await expect(page.getByTestId("product-grid")).toBeVisible({ timeout: 30_000 });
   await page.goForward();
