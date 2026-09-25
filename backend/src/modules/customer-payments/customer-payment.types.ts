@@ -18,6 +18,58 @@ export const CUSTOMER_PAYMENT_GATEWAYS = ["COD", "FONEPAY", "CYBERSOURCE"] as co
 export type CustomerPaymentGateway = (typeof CUSTOMER_PAYMENT_GATEWAYS)[number];
 
 /**
+ * Catalog of every payment option the storefront may render, with the storefront
+ * label and the order `paymentMethod` each one sends.
+ *
+ * This is the ONLY place the checkout learns what exists: the storefront must
+ * never hardcode production availability (see {@link CustomerPaymentGatewayOption}).
+ * The labels/methods deliberately mirror the order `paymentMethod` enum:
+ * Fonepay QR settles from a bank account ("Bank Transfer") and card payments use
+ * "Credit Card" — no new enum value is introduced for a gateway.
+ */
+export const CUSTOMER_PAYMENT_GATEWAY_CATALOG: ReadonlyArray<{
+  gateway: CustomerPaymentGateway;
+  label: string;
+  hint: string;
+  method: PaymentMethod;
+}> = [
+  {
+    gateway: "COD",
+    label: "Cash on Delivery",
+    hint: "Pay in cash when your order arrives.",
+    method: "Cash on Delivery",
+  },
+  {
+    gateway: "FONEPAY",
+    label: "Fonepay QR",
+    hint: "Scan a payment QR with any Fonepay-supported banking app.",
+    method: "Bank Transfer",
+  },
+  {
+    gateway: "CYBERSOURCE",
+    label: "Credit / Debit Card",
+    hint: "Pay securely by card with Cybersource Unified Checkout.",
+    method: "Credit Card",
+  },
+];
+
+/**
+ * Server-discovered availability of one payment option.
+ *
+ * `available` is derived from the provider REGISTRY (enabled + fully
+ * configured), never from the request. COD is offline and always available; an
+ * online gateway is `available: false` until its credentials are configured, so
+ * the storefront can never offer a gateway that would fail at the till.
+ */
+export interface CustomerPaymentGatewayOption {
+  gateway: CustomerPaymentGateway;
+  label: string;
+  hint: string;
+  method: PaymentMethod;
+  available: boolean;
+}
+
+/**
  * Customer-safe payment projection. Only information the customer storefront
  * needs is exposed. Never secrets, provider API responses, or internal state.
  *

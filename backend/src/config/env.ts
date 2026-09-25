@@ -1,6 +1,12 @@
 import "dotenv/config";
 import { z } from "zod";
 
+import { normalizeFonepayPrivateKey } from "../modules/payments/providers/fonepay/fonepay.signature.js";
+import {
+  fonepayConfigProblems,
+  type FonepayConfigInput,
+} from "../modules/payments/providers/fonepay/fonepay.validation.js";
+
 /**
  * Environment configuration, validated at startup with Zod.
  * Fails fast when required variables are missing or malformed.
@@ -159,18 +165,45 @@ const envSchema = z
     // - Server-side only. NEVER expose via VITE_*/NEXT_PUBLIC_* or send to the
     //   browser. Credentials (username/password/RSA private key) live exclusively
     //   in environment variables and are never logged.
-    // - Optional at boot so the server starts for non-payment
-    //   work; the provider fails fast (503) at payment time when unconfigured.
-    //   The production check below enforces all-or-nothing configuration.
+    // - Optional at boot so the server starts for non-payment work; the provider
+    //   fails fast (503) at payment time when unconfigured. The startup check
+    //   below enforces enable/disable + all-or-nothing configuration.
     // - The private key is PKCS8, supplied either Base64- or HEX-encoded WITHOUT
-    //   PEM headers (matching Fonepay's Postman collection normalization).
+    //   PEM headers (matching Fonepay's Postman collection normalization). Its
+    //   encoding/key-material is validated at boot so a bad key can never be
+    //   discovered only at the first live checkout.
     // - FONEPAY_BASE_URL examples (never hardcoded in source):
     //     UAT/dev : https://uat-new-merchant-api.fonepay.com
     //               (Postman dev gateway: https://dev-external-gateway-new.fonepay.com/merchantThirdparty)
     //     prod    : supplied by Fonepay merchant onboarding — do not invent.
     //   API paths are appended in code: /api/merchant/third-party/v2/... and
     //   /api/merchant/merchantDetailsForThirdParty/v2/login.
+    // - There is NO Fonepay callback/return URL: the documented Intent/QR flow
+    //   delivers a WebSocket NOTIFICATION (display only) and settlement is
+    //   decided exclusively by the server-to-server Status API
+    //   (thirdPartyDynamicQrGetStatus). No FONEPAY_CALLBACK_URL is therefore
+    //   read — adding one would be dead configuration.
     // ---------------------------------------------------------------------------
+
+    /**
+     * Explicit enable/disable flag. DEFAULTS TO FALSE: Fonepay is a live-money
+     * gateway, so it stays unregistered (and hidden in checkout) until real
+     * merchant credentials AND FONEPAY_ENVIRONMENT have been supplied. Setting
+     * this to "true" requires the complete credential set — a half-configured
+     * enabled gateway refuses to boot rather than failing at the till.
+     */
+    FONEPAY_ENABLED: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((value) => value === "true"),
+    /**
+     * Gateway environment. Must be stated explicitly when Fonepay is enabled:
+     * production must never route live credentials at the UAT host, and a
+     * production-declared configuration must not point at a sandbox host.
+     */
+    FONEPAY_ENVIRONMENT: z
+      .union([z.literal(""), z.literal("uat"), z.literal("production")])
+      .default(""),
     FONEPAY_BASE_URL: z.string().trim().default(""),
     FONEPAY_USERNAME: z.string().trim().default(""),
     FONEPAY_PASSWORD: z.string().trim().default(""),
@@ -319,7 +352,7 @@ const envSchema = z
         value.FONEPAY_PASSWORD,
         value.FONEPAY_PRIVATE_KEY,
       ].filter((part) => part.length > 0).length > 0;
-    if (!fonepayCredentialsSet) {
+    if (!fonepayCredentialsSet && !value.FONEPAY_ENABLED) {
       return; // Fonepay disabled — terminal id not required, not validated.
     }
     if (value.FONEPAY_TERMINAL_ID.length === 0) {
@@ -349,14 +382,17 @@ if (!parsed.success) {
 
 export const env = parsed.data;
 
-// Fonepay placeholder normalization: when Fonepay is disabled (template
-// placeholder values present — see fonepayIsDisabled()), blank out ALL of its
-// credential values so downstream checks agree on one state:
-//   - the all-or-nothing check below sees an absent set (Fonepay optional),
-//   - isFonepayConfigured() (providers/fonepay/fonepay.config.ts) is false, so
-//     the provider is never registered with dead credentials,
+// Fonepay placeholder normalization: when Fonepay carries only template
+// placeholder values (see fonepayIsDisabled()), blank out ALL of its credential
+// values so downstream checks agree on one state:
+//   - the configuration check below sees an absent set (Fonepay not configured),
+//   - fonepayEnabled()/isFonepayConfigured() (providers/fonepay/fonepay.config.ts)
+//     are false, so the provider is never registered with dead credentials,
 //   - any Fonepay attempt fails fast with 503 "not_configured".
 // No credentials are invented; placeholder text is simply treated as unset.
+// If FONEPAY_ENABLED was set to "true" alongside placeholder values, the
+// configuration check below refuses to boot rather than silently disabling the
+// gateway the operator believes they enabled.
 if (fonepayIsDisabled(env)) {
   env.FONEPAY_BASE_URL = "";
   env.FONEPAY_USERNAME = "";
@@ -370,26 +406,52 @@ const DEV_REFRESH_SECRET = "dev-refresh-secret-change-me-fedcba9876543210";
 const DEV_CUSTOMER_ACCESS_SECRET = "dev-customer-access-secret-0123456789abcdef";
 
 // ---------------------------------------------------------------------------
-// Fonepay all-or-nothing check — enforced in EVERY environment (not just
-// production). Fonepay is fully optional: when all FONEPAY_* variables are
-// omitted/empty the gateway stays unregistered (payment.providers.ts) and any
-// Fonepay attempt fails fast with 503 "not_configured" (fonepay.client.ts).
-// But a HALF-set credential set would register nothing yet still look
-// intentional, so it refuses to boot instead of failing later at checkout.
+// Fonepay configuration validation — enforced in EVERY environment.
+//
+// Fonepay is a live-money gateway, so a configuration that LOOKS enabled but
+// cannot work is refused at boot instead of failing at the till:
+//   - FONEPAY_ENABLED=true requires the complete credential set;
+//   - a HALF-set credential set (any subset) is never intentional and is refused;
+//   - FONEPAY_BASE_URL must be an absolute https:// URL;
+//   - the gateway environment must be explicit and consistent with the host
+//     (production ↔ live host, so live credentials can never silently point at
+//     the UAT host and vice versa);
+//   - FONEPAY_PRIVATE_KEY must actually parse as a PKCS8 RSA key.
+//
+// With FONEPAY_ENABLED left at its default (false) and no credentials present,
+// none of this runs: the gateway stays unregistered (payment.providers.ts) and
+// every Fonepay attempt fails fast with 503 "not_configured".
 // ---------------------------------------------------------------------------
-const fonepayParts = [
-  env.FONEPAY_BASE_URL,
-  env.FONEPAY_USERNAME,
-  env.FONEPAY_PASSWORD,
-  env.FONEPAY_PRIVATE_KEY,
-  env.FONEPAY_TERMINAL_ID,
-];
-const fonepaySet = fonepayParts.filter((value) => value.length > 0).length;
-if (fonepaySet > 0 && fonepaySet < fonepayParts.length) {
-  console.error(
-    "Fonepay is only partially configured: FONEPAY_BASE_URL, FONEPAY_USERNAME, FONEPAY_PASSWORD, FONEPAY_PRIVATE_KEY and FONEPAY_TERMINAL_ID must be set together (or all omitted).",
-  );
-  process.exit(1);
+{
+  const fonepayInput: FonepayConfigInput = {
+    enabled: env.FONEPAY_ENABLED,
+    environment: env.FONEPAY_ENVIRONMENT,
+    baseUrl: env.FONEPAY_BASE_URL,
+    username: env.FONEPAY_USERNAME,
+    password: env.FONEPAY_PASSWORD,
+    terminalId: env.FONEPAY_TERMINAL_ID,
+    privateKey: env.FONEPAY_PRIVATE_KEY,
+  };
+  const fonepayProblems = fonepayConfigProblems(fonepayInput);
+
+  // Validate the key material itself (still no secret is ever printed).
+  if (env.FONEPAY_PRIVATE_KEY.length > 0) {
+    try {
+      normalizeFonepayPrivateKey(env.FONEPAY_PRIVATE_KEY);
+    } catch {
+      fonepayProblems.push(
+        "FONEPAY_PRIVATE_KEY must be a PKCS8 RSA private key encoded as Base64 or hex, WITHOUT PEM headers.",
+      );
+    }
+  }
+
+  if (fonepayProblems.length > 0) {
+    console.error("Refusing to start with an unusable Fonepay configuration:");
+    for (const problem of fonepayProblems) {
+      console.error(`  - ${problem}`);
+    }
+    process.exit(1);
+  }
 }
 
 if (env.NODE_ENV === "production") {
@@ -415,6 +477,15 @@ if (env.NODE_ENV === "production") {
   ) {
     problems.push(
       "CUSTOMER_JWT_ACCESS_SECRET must be a unique secret of at least 32 characters in production.",
+    );
+  }
+  // Fonepay in production must be declared as the PRODUCTION environment.
+  // Reading process.env (not the parsed value) mirrors the Cybersource guard
+  // below: an operator who merely copies the UAT credential block into the
+  // production server would otherwise take live money against the UAT host.
+  if (env.FONEPAY_ENABLED && process.env.FONEPAY_ENVIRONMENT !== "production") {
+    problems.push(
+      'FONEPAY_ENVIRONMENT must be set explicitly to "production" when Fonepay is enabled in production (a missing or "uat" value would route live QR payments at the UAT host).',
     );
   }
   // Cybersource is all-or-nothing (like Fonepay): a half-configured

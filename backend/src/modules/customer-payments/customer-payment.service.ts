@@ -6,15 +6,17 @@ import { customerAuthRepository } from "../customer-auth/customer-auth.repositor
 import { orderRepository, type OrderPatch } from "../orders/order.repository.js";
 import type { IOrderTimelineEntry, PaymentStatus } from "../orders/order.model.js";
 import type { OrderRecord } from "../orders/order.types.js";
-import { getPaymentProvider } from "../payments/payment.providers.js";
+import { getPaymentProvider, isProviderEnabled } from "../payments/payment.providers.js";
 import {
   closeFonepayMonitor,
   monitorFonepayPayment,
 } from "../payments/providers/fonepay/fonepay.websocket.js";
 import { customerPaymentRepository } from "./customer-payment.repository.js";
+import { CUSTOMER_PAYMENT_GATEWAY_CATALOG } from "./customer-payment.types.js";
 import type {
   CustomerPaymentDto,
   CustomerPaymentGateway,
+  CustomerPaymentGatewayOption,
   CustomerPaymentResult,
   CustomerPaymentVerifyInput,
 } from "./customer-payment.types.js";
@@ -421,6 +423,42 @@ const customerPaymentService = {
           duplicate: false,
         };
       }
+      // Currency binding: when the provider reports the currency it settled in,
+      // it MUST be the currency this order's payment was initiated in (for
+      // Fonepay that is always NPR; for Cybersource it is the merchant account
+      // currency). The admin payment path already enforced this; the customer
+      // path previously stored the provider currency without comparing it, so a
+      // numerically-equal amount in the wrong currency could settle an order.
+      const providerCurrency =
+        typeof verification.metadata?.currency === "string" &&
+        verification.metadata.currency.length > 0
+          ? verification.metadata.currency.toUpperCase()
+          : null;
+      const expectedCurrency = (
+        order.payment.currency ?? env.PAYMENT_DEFAULT_CURRENCY
+      ).toUpperCase();
+      if (providerCurrency !== null && providerCurrency !== expectedCurrency) {
+        logger.warn(
+          {
+            orderId,
+            gateway: input.gateway,
+            transactionId: input.providerTransactionId,
+            expectedCurrency,
+            providerCurrency,
+          },
+          "Customer payment currency mismatch — not marking Paid",
+        );
+        await applyVerifiedStatus(orderId, "Failed", null, {
+          ...(order.payment.metadata ?? {}),
+          failureReason: "Payment currency mismatch.",
+        });
+        const updated = await orderRepository.findByIdPopulated(orderId);
+        return {
+          payment: updated ? toCustomerPaymentDto(updated) : toCustomerPaymentDto(order),
+          duplicate: false,
+        };
+      }
+
       // Amount verified: mark Paid ATOMICALLY (Phase 16F). The guarded
       // findOneAndUpdate only matches an order that is still payable, so a
       // concurrent cancel/expire wins safely.
@@ -591,6 +629,25 @@ const customerPaymentService = {
       closeFonepayMonitor(referenceLabel, "terminal_status");
     }
   },
+  /**
+   * Payment options the checkout may offer, with server-derived availability.
+   *
+   * The storefront renders ONLY what this returns as `available: true`, so a
+   * gateway that is disabled / not fully configured (Fonepay by default) can
+   * never be presented as a payment method — and enabling it on the server
+   * makes it appear without a storefront deploy. Requires an authenticated
+   * customer: availability is operational configuration, not public data.
+   */
+  getAvailableGateways(): CustomerPaymentGatewayOption[] {
+    return CUSTOMER_PAYMENT_GATEWAY_CATALOG.map((option) => ({
+      ...option,
+      // COD is offline (no provider transaction at all) and always available;
+      // every online gateway must be REGISTERED in the provider registry, which
+      // only happens when it is enabled AND fully configured.
+      available: option.gateway === "COD" ? true : isProviderEnabled(option.gateway),
+    }));
+  },
+
   /** Fetch the current customer-safe payment status (ownership scoped). */
   async getStatus(customerAccountId: string, orderId: string): Promise<CustomerPaymentDto> {
     const crmCustomerId = await ensureCrmCustomer(customerAccountId);

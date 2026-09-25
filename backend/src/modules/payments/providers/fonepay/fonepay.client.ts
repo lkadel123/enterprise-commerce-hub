@@ -1,3 +1,5 @@
+import { ZodError, type ZodType } from "zod";
+
 import { env } from "../../../../config/env.js";
 import { logger } from "../../../../utils/logger.js";
 import {
@@ -6,6 +8,12 @@ import {
   fonepayTimeoutMs,
   isFonepayConfigured,
 } from "./fonepay.config.js";
+import {
+  describeFonepayApplicationFailure,
+  summarizeFonepayIssues,
+  summarizeFonepayPayload,
+  type FonepayResponseDiagnostics,
+} from "./fonepay.diagnostics.js";
 import {
   fonepayBasicAuth,
   normalizeFonepayPrivateKey,
@@ -44,6 +52,10 @@ import {
 const THIRD_PARTY_BASE_PATH = "/api/merchant/third-party/v2";
 const LOGIN_PATH = "/api/merchant/merchantDetailsForThirdParty/v2/login";
 
+/** Shown to callers when a Fonepay body does not match its documented contract. */
+const FONEPAY_INVALID_RESPONSE_MESSAGE =
+  "Fonepay returned a response that does not match the documented contract.";
+
 /** Provider-level error with the Fonepay HTTP status and a safe message. */
 export class FonepayApiError extends Error {
   public readonly httpStatus: number;
@@ -55,14 +67,48 @@ export class FonepayApiError extends Error {
     | "validation"
     | "duplicate_reference"
     | "terminal_not_found"
+    | "invalid_response"
     | "provider";
 
-  constructor(httpStatus: number, kind: FonepayApiError["kind"], message: string) {
+  /**
+   * Redaction-safe diagnostics for a rejected response body: issue paths,
+   * expected/received TYPES and provider field NAMES only (see
+   * `fonepay.diagnostics.ts`). Safe to log verbatim — it never contains a
+   * provider value, the QR payload, a token or signing material.
+   */
+  public readonly diagnostics?: FonepayResponseDiagnostics;
+
+  constructor(
+    httpStatus: number,
+    kind: FonepayApiError["kind"],
+    message: string,
+    diagnostics?: FonepayResponseDiagnostics,
+  ) {
     super(message);
     this.name = "FonepayApiError";
     this.httpStatus = httpStatus;
     this.kind = kind;
+    this.diagnostics = diagnostics;
   }
+}
+
+/**
+ * Validate a provider body against its documented schema, failing CLOSED.
+ *
+ * Unlike a bare `schema.parse()`, a violation is converted into a typed
+ * `invalid_response` error that CARRIES redaction-safe diagnostics, so the log
+ * can state which field was wrong and which types were expected/received. The
+ * raw `ZodError` (whose `message` can embed received values, and which the
+ * blanket request catch would have downgraded to a misleading 502 "network")
+ * never escapes this module.
+ */
+function parseFonepayResponse<T>(schema: ZodType<T>, raw: unknown): T {
+  const parsed = schema.safeParse(raw);
+  if (parsed.success) return parsed.data;
+  throw new FonepayApiError(502, "invalid_response", FONEPAY_INVALID_RESPONSE_MESSAGE, {
+    responseShape: summarizeFonepayPayload(raw),
+    issues: summarizeFonepayIssues(parsed.error),
+  });
 }
 
 /** Ensure the module is usable — fail fast with a typed error when unconfigured. */
@@ -130,6 +176,11 @@ async function fonepaySignedRequest<T>(options: {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), fonepayTimeoutMs());
   const startedAt = Date.now();
+  // Tracked for SAFE failure diagnostics only: the HTTP status and the parsed
+  // body (never logged itself — only summarized as names/types by
+  // `fonepay.diagnostics.ts`).
+  let httpStatus: number | null = null;
+  let rawPayload: unknown;
   try {
     const response = await fetch(fonepayUrl(options.path), {
       method: "POST",
@@ -142,6 +193,7 @@ async function fonepaySignedRequest<T>(options: {
       signal: controller.signal,
     });
     const latencyMs = Date.now() - startedAt;
+    httpStatus = response.status;
     logger.info(
       { provider: "FONEPAY", path: options.path, httpStatus: response.status, latencyMs },
       "Fonepay API call",
@@ -150,12 +202,65 @@ async function fonepaySignedRequest<T>(options: {
     if (!response.ok) {
       throw await fonepayErrorFromResponse(response, options.path);
     }
-    const data: unknown = await response.json();
-    return options.validate(data);
+    rawPayload = await response.json();
+    return options.validate(rawPayload);
   } catch (error) {
-    if (error instanceof FonepayApiError) throw error;
+    if (error instanceof FonepayApiError) {
+      // A body rejected by contract validation (or an application-level failure
+      // delivered with HTTP 200): `diagnostics` is redaction-safe by
+      // construction — field NAMES, issue paths, expected/received TYPES — and
+      // is the only way to diagnose a provider-side response change without
+      // capturing payment payloads.
+      if (error.diagnostics) {
+        logger.error(
+          {
+            provider: "FONEPAY",
+            path: options.path,
+            httpStatus,
+            kind: error.kind,
+            ...error.diagnostics,
+          },
+          "Fonepay API response rejected",
+        );
+      }
+      throw error;
+    }
     if (error instanceof Error && error.name === "AbortError") {
       throw new FonepayApiError(504, "timeout", `Fonepay request timed out: ${options.path}`);
+    }
+    // A 2xx body that is not JSON is a contract violation, not a transport
+    // failure: classifying it as "network" hid the real cause from operators.
+    if (error instanceof SyntaxError) {
+      logger.error(
+        { provider: "FONEPAY", path: options.path, httpStatus, errorType: "SyntaxError" },
+        "Fonepay API response rejected",
+      );
+      throw new FonepayApiError(502, "invalid_response", FONEPAY_INVALID_RESPONSE_MESSAGE);
+    }
+    // Any remaining raw `ZodError` (a validator that still throws it directly):
+    // summarize safely instead of leaking provider internals or reporting it as
+    // a network failure.
+    if (error instanceof ZodError) {
+      const diagnostics: FonepayResponseDiagnostics = {
+        responseShape: summarizeFonepayPayload(rawPayload),
+        issues: summarizeFonepayIssues(error),
+      };
+      logger.error(
+        {
+          provider: "FONEPAY",
+          path: options.path,
+          httpStatus,
+          errorType: "ZodError",
+          ...diagnostics,
+        },
+        "Fonepay API response rejected",
+      );
+      throw new FonepayApiError(
+        502,
+        "invalid_response",
+        FONEPAY_INVALID_RESPONSE_MESSAGE,
+        diagnostics,
+      );
     }
     logger.error(
       { provider: "FONEPAY", path: options.path, errorType: (error as Error)?.name },
@@ -192,7 +297,7 @@ async function login(): Promise<string> {
     path: LOGIN_PATH,
     payload,
     authHeader: fonepayBasicAuth(env.FONEPAY_USERNAME, env.FONEPAY_PASSWORD),
-    validate: (raw) => fonepayLoginResponseSchema.parse(raw),
+    validate: (raw) => parseFonepayResponse(fonepayLoginResponseSchema, raw),
   });
   if (!data.accessToken) {
     throw new FonepayApiError(502, "provider", "Fonepay login returned no access token.");
@@ -266,7 +371,7 @@ export async function getFonepayBankList(mobileNo?: string): Promise<FonepayBank
     if (!response.ok) {
       throw await fonepayErrorFromResponse(response, "/banks/list");
     }
-    return fonepayBankListResponseSchema.parse(await response.json());
+    return parseFonepayResponse(fonepayBankListResponseSchema, await response.json());
   } catch (error) {
     if (error instanceof FonepayApiError) throw error;
     if (error instanceof Error && error.name === "AbortError") {
@@ -278,7 +383,16 @@ export async function getFonepayBankList(mobileNo?: string): Promise<FonepayBank
   }
 }
 
-/** POST /api/merchant/third-party/v2/generate-intent-qr */
+/**
+ * POST /api/merchant/third-party/v2/generate-intent-qr
+ *
+ * Response handling (the production failure this guards against): Fonepay can
+ * answer HTTP 200 with an application-level failure (`message`/`error`/
+ * `qrMessage`, no `qrString`). Such a body is reported as a PROVIDER error with
+ * the provider's reason, instead of surfacing as an opaque schema violation;
+ * anything else that lacks the documented `qrString` payload fails closed with
+ * redaction-safe diagnostics.
+ */
 export async function generateFonepayIntentQr(
   payload: FonepayIntentQrRequest,
 ): Promise<FonepayIntentQrResponse> {
@@ -289,7 +403,18 @@ export async function generateFonepayIntentQr(
     path: `${THIRD_PARTY_BASE_PATH}/generate-intent-qr`,
     payload: body,
     authHeader: bearerHeader(token),
-    validate: (raw) => fonepayIntentQrResponseSchema.parse(raw),
+    validate: (raw) => {
+      // HTTP 200 + application-level failure: never a success, and never a
+      // schema violation either — the provider's own reason is what an operator
+      // needs to see.
+      const providerFailure = describeFonepayApplicationFailure(raw);
+      if (providerFailure) {
+        throw new FonepayApiError(502, "provider", providerFailure, {
+          responseShape: summarizeFonepayPayload(raw),
+        });
+      }
+      return parseFonepayResponse(fonepayIntentQrResponseSchema, raw);
+    },
   });
 }
 
@@ -303,7 +428,7 @@ export async function getFonepayPaymentStatus(
     path: `${THIRD_PARTY_BASE_PATH}/thirdPartyDynamicQrGetStatus`,
     payload: body,
     authHeader: bearerHeader(token),
-    validate: (raw) => fonepayStatusResponseSchema.parse(raw),
+    validate: (raw) => parseFonepayResponse(fonepayStatusResponseSchema, raw),
   });
 }
 

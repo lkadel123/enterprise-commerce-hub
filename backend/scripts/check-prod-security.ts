@@ -1,3 +1,5 @@
+import { generateKeyPairSync } from "node:crypto";
+
 /**
  * Production-mode security verification (Phase 9 audit).
  *
@@ -54,10 +56,22 @@ process.env.CLIENT_ORIGIN = "https://admin.example.invalid,https://www.example.i
 // without a local .env (CI/netless runners). These are NOT real credentials —
 // they only satisfy env validation; no gateway call is made. They cover the
 // two active gateways (Fonepay QR + Cybersource Unified Checkout).
-process.env.FONEPAY_BASE_URL = "https://fonepay-placeholder.invalid";
+//
+// Fonepay is explicitly ENABLED here so the script exercises the production
+// boot guards (FONEPAY_ENABLED requires a complete credential set, an explicit
+// production environment, an https live host and a parseable PKCS8 RSA key).
+// The RSA key is generated in-process for this run and discarded — it is not a
+// merchant key, is never persisted, and can never sign a real Fonepay request.
+function ephemeralPkcs8PrivateKey(): string {
+  const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  return (privateKey.export({ type: "pkcs8", format: "der" }) as Buffer).toString("base64");
+}
+process.env.FONEPAY_ENABLED = "true";
+process.env.FONEPAY_ENVIRONMENT = "production";
+process.env.FONEPAY_BASE_URL = "https://merchantapi.fonepay.invalid";
 process.env.FONEPAY_USERNAME = "placeholder-user";
 process.env.FONEPAY_PASSWORD = "placeholder-password";
-process.env.FONEPAY_PRIVATE_KEY = "placeholder-key";
+process.env.FONEPAY_PRIVATE_KEY = ephemeralPkcs8PrivateKey();
 process.env.FONEPAY_TERMINAL_ID = "PLACEHOLDER1";
 process.env.CYBERSOURCE_MERCHANT_ID = "placeholder-merchant";
 process.env.CYBERSOURCE_KEY_ID = "placeholder-key-id";

@@ -31,6 +31,14 @@ const router = Router();
 router.use(apiRateLimiter);
 
 /**
+ * GET /api/v1/customer/payments/gateways
+ * Payment options the checkout may render, with server-derived availability.
+ * Declared BEFORE the `/:orderId/...` routes so a literal path can never be
+ * shadowed by a dynamic segment.
+ */
+router.get("/gateways", customerAuthenticate, customerPaymentController.gateways);
+
+/**
  * POST /api/v1/customer/payments/:orderId/initiate
  * Create a gateway payment session for a customer-owned order. The
  * amount is always the server order total; the response carries the

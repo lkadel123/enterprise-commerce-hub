@@ -1,68 +1,59 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiErrorMessage } from "@/lib/api/client";
-import { useValidateCouponMutation } from "@/features/checkout/checkout-hooks";
 import {
-  isValidCouponCode,
-  type PaymentChoice,
-  type PaymentGatewayChoice,
-} from "@/features/checkout/checkout-validation";
-import type { CouponValidationResult } from "@/types";
+  usePaymentGatewaysQuery,
+  useValidateCouponMutation,
+} from "@/features/checkout/checkout-hooks";
+import { isValidCouponCode, type PaymentChoice } from "@/features/checkout/checkout-validation";
+import type { CouponValidationResult, CustomerPaymentGatewayOption } from "@/types";
 
 interface PaymentStepProps {
   choice: PaymentChoice | null;
   couponCode: string | null;
   cartItems: { productId: string; quantity: number }[];
-  onChoiceChange: (choice: PaymentChoice) => void;
+  /**
+   * Notified with the customer's selection, or `null` when a previously chosen
+   * method is no longer reported as available by the backend.
+   */
+  onChoiceChange: (choice: PaymentChoice | null) => void;
   onCouponChange: (code: string | null) => void;
   onContinue: () => void;
   onBack: () => void;
 }
 
-const METHODS: {
-  /** Stable React key — `id` alone repeats when one method has two gateways. */
-  key: string;
-  id: PaymentChoice["method"];
-  gateway?: PaymentGatewayChoice;
-  label: string;
-  hint: string;
-}[] = [
-  {
-    key: "COD",
-    id: "Cash on Delivery",
-    label: "Cash on Delivery",
-    hint: "Pay in cash when your order arrives.",
-  },
-  {
-    key: "FONEPAY_QR",
-    // Fonepay QR settles from the customer's bank account, so it rides on the
-    // existing "Bank Transfer" method with the FONEPAY gateway — no new
-    // backend payment-method enum value is introduced.
-    id: "Bank Transfer",
-    gateway: "FONEPAY",
-    label: "Fonepay QR",
-    hint: "Scan a payment QR with any Fonepay-supported banking app.",
-  },
-  {
-    key: "CYBERSOURCE_CARD",
-    id: "Credit Card",
-    // Card payments run on Cybersource Unified Checkout (embedded, PCI SAQ A):
-    // the backend creates the capture context from the server-side order
-    // total, the card form renders inside Cybersource's own iframe, and only
-    // a Cybersource-signed, server-verified payment token can settle the
-    // order.
-    gateway: "CYBERSOURCE",
-    label: "Credit / Debit Card",
-    hint: "Pay securely by card with Cybersource Unified Checkout.",
-  },
-];
+/**
+ * The order choice a server-reported payment option represents. The backend
+ * owns the label→method mapping (`CUSTOMER_PAYMENT_GATEWAY_CATALOG`), so no
+ * method/gateway pairing is decided here: "COD" settles offline and every
+ * online option carries the gateway that processes it.
+ */
+function toPaymentChoice(option: CustomerPaymentGatewayOption): PaymentChoice {
+  return option.gateway === "COD"
+    ? { method: option.method }
+    : { method: option.method, gateway: option.gateway };
+}
+
+/** True when `choice` is exactly the option the backend reported as `option`. */
+function isSameChoice(choice: PaymentChoice | null, option: CustomerPaymentGatewayOption): boolean {
+  if (!choice) return false;
+  const optionGateway = option.gateway === "COD" ? null : option.gateway;
+  return choice.method === option.method && (choice.gateway ?? null) === optionGateway;
+}
 
 /**
  * Step 2 — payment method and coupon.
+ *
+ * Payment methods are SERVER-DRIVEN (`GET /customer/payments/gateways`): only
+ * options the backend reports `available: true` are rendered, so a gateway that
+ * is disabled or not fully configured (Fonepay by default) is never presented
+ * as payable — and enabling it on the server makes it appear without a
+ * storefront deploy. A selection the backend stops reporting as available is
+ * cleared rather than carried into the order.
  *
  * The coupon check is ADVISORY only: the projected discount comes from the
  * backend validate endpoint, but the authoritative discount is computed again
@@ -81,6 +72,26 @@ export function PaymentStep({
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponResult, setCouponResult] = useState<CouponValidationResult | null>(null);
   const validateCoupon = useValidateCouponMutation();
+  // Server-derived payment options: the provider registry (enabled + fully
+  // configured) decides what is payable in this deployment, never the browser.
+  const gateways = usePaymentGatewaysQuery();
+  const options = gateways.data ?? [];
+  // Backend contract (`getAvailableGateways`): render ONLY the options reported
+  // `available: true` — an unavailable gateway is not a payment method the
+  // customer may pick, so it is not offered at all.
+  const availableOptions = options.filter((option) => option.available);
+
+  // A selected method only stays selected while the backend still reports it as
+  // available: a gateway can be disabled server-side between sessions, and
+  // silently carrying a stale choice into the order would invite a payment that
+  // can never settle.
+  useEffect(() => {
+    if (!choice || gateways.data === undefined) return;
+    const stillAvailable = gateways.data.some(
+      (option) => option.available && isSameChoice(choice, option),
+    );
+    if (!stillAvailable) onChoiceChange(null);
+  }, [choice, gateways.data, onChoiceChange]);
 
   const applyCoupon = () => {
     const code = couponInput.trim();
@@ -121,11 +132,9 @@ export function PaymentStep({
     onCouponChange(null);
   };
 
-  const canContinue =
-    choice !== null &&
-    (choice.method === "Credit Card" || choice.method === "Digital Wallet"
-      ? !!choice.gateway
-      : true);
+  // Only a method the backend currently reports as available can be continued
+  // with, so an unknown or unavailable selection never reaches the order.
+  const canContinue = availableOptions.some((option) => isSameChoice(choice, option));
 
   return (
     <section aria-labelledby="payment-step-heading">
@@ -133,38 +142,51 @@ export function PaymentStep({
         Payment method
       </h2>
 
-      <fieldset className="mt-4 space-y-2">
-        <legend className="sr-only">Payment method</legend>
-        {METHODS.map((method) => {
-          const selected =
-            choice?.method === method.id && (choice.gateway ?? null) === (choice?.gateway ?? null);
-          return (
+      {gateways.isPending ? (
+        <p role="status" className="mt-4 text-sm text-muted-foreground">
+          Loading payment methods…
+        </p>
+      ) : null}
+
+      {gateways.isError ? (
+        <div className="mt-4 rounded-md border p-4">
+          <p role="alert" className="text-sm text-destructive">
+            Unable to load the available payment methods.
+          </p>
+          <Button
+            variant="outline"
+            className="mt-2 min-h-[44px]"
+            onClick={() => void gateways.refetch()}
+          >
+            Retry
+          </Button>
+        </div>
+      ) : null}
+
+      {gateways.isSuccess ? (
+        <fieldset className="mt-4 space-y-2">
+          <legend className="sr-only">Payment method</legend>
+          {availableOptions.map((option) => (
             <label
-              key={method.key}
+              key={option.gateway}
               className="flex min-h-[44px] cursor-pointer items-start gap-3 rounded-md border p-3 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
             >
               <input
                 type="radio"
                 name="payment-method"
                 className="mt-1 h-4 w-4"
-                checked={selected}
-                onChange={() =>
-                  onChoiceChange(
-                    method.gateway
-                      ? { method: method.id, gateway: method.gateway }
-                      : { method: method.id },
-                  )
-                }
+                checked={isSameChoice(choice, option)}
+                onChange={() => onChoiceChange(toPaymentChoice(option))}
               />
               <span className="text-sm">
-                <span className="font-medium">{method.label}</span>
+                <span className="font-medium">{option.label}</span>
                 <br />
-                <span className="text-muted-foreground">{method.hint}</span>
+                <span className="text-muted-foreground">{option.hint}</span>
               </span>
             </label>
-          );
-        })}
-      </fieldset>
+          ))}
+        </fieldset>
+      ) : null}
 
       {choice?.method === "Credit Card" ? (
         <p className="mt-3 flex min-h-[44px] items-center gap-2 rounded-md border bg-muted px-3 text-sm text-muted-foreground">
@@ -272,8 +294,9 @@ export function PaymentStep({
       </div>
       {!canContinue ? (
         <p className="mt-2 text-sm text-muted-foreground">
-          Select a payment method
-          {choice?.method === "Credit Card" ? " (card is confirmed at checkout)" : ""} to continue.
+          {gateways.isError
+            ? "Payment methods could not be loaded — retry before continuing."
+            : "Select an available payment method to continue."}
         </p>
       ) : null}
     </section>

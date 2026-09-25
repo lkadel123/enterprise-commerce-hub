@@ -26,6 +26,7 @@ export const PAYMENT_STATUS_POLL_MS = 5000;
 
 export const checkoutKeys = {
   addresses: ["customer", "addresses"] as const,
+  paymentGateways: ["customer", "payment-gateways"] as const,
   coupon: (code: string) => ["coupon", code] as const,
   order: (orderId: string) => ["order", orderId] as const,
   paymentStatus: (orderId: string) => ["payment-status", orderId] as const,
@@ -65,6 +66,24 @@ export function useDeleteAddressMutation() {
   return useMutation({
     mutationFn: (id: string) => addressesApi.remove(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: checkoutKeys.addresses }),
+  });
+}
+
+/* -------------------------------- Payments ------------------------------- */
+
+/**
+ * Payment options the checkout may offer, as derived by the backend provider
+ * registry. Only options reported `available: true` may be selected: a gateway
+ * that is disabled or not fully configured (Fonepay by default) is never
+ * presented as payable, and enabling it on the server makes it appear here
+ * without a storefront deploy.
+ */
+export function usePaymentGatewaysQuery() {
+  const enabled = useCustomerAuthReady();
+  return useQuery({
+    queryKey: checkoutKeys.paymentGateways,
+    queryFn: async () => (await customerPaymentsApi.gateways()).data.gateways,
+    enabled,
   });
 }
 

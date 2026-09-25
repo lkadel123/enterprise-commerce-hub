@@ -106,13 +106,25 @@ grant ADMIN/SUPER_ADMIN/staff roles (customer accounts carry no role field).
 | `CYBERSOURCE_MERCHANT_ID` / `CYBERSOURCE_KEY_ID` / `CYBERSOURCE_SHARED_SECRET` | **R**, P | CyberSource REST credentials (server-only). |
 | `CYBERSOURCE_TARGET_ORIGINS` | O, P | Origins allowed to embed Unified Checkout. Must be `https://` in production (boot-enforced), e.g. `https://www.example.com`. |
 | `CYBERSOURCE_CURRENCY` / `CYBERSOURCE_LOCALE` / `CYBERSOURCE_COUNTRY` / `CYBERSOURCE_ALLOWED_CARD_NETWORKS` / `CYBERSOURCE_ALLOWED_PAYMENT_TYPES` / `CYBERSOURCE_ORGANIZATION_ID` | O | Checkout tuning. |
-| `FONEPAY_BASE_URL` / `FONEPAY_USERNAME` / `FONEPAY_PASSWORD` / `FONEPAY_PRIVATE_KEY` / `FONEPAY_TERMINAL_ID` | O/P | Fonepay Dynamic QR — **all-or-nothing**: partial configuration refuses boot. |
+| `FONEPAY_ENABLED` | O/P | `true`/`false` (default `false`). Fonepay stays unregistered — and hidden at checkout — until it is `true` **and** the full credential set below is present; `true` without them refuses boot. |
+| `FONEPAY_ENVIRONMENT` | **R** when enabled, P | `uat` or `production`. **Must be explicitly `production` in production** — with Fonepay enabled, boot refuses a missing/`uat` value so live QR payments can never route at the UAT host, and a `production` declaration may not point `FONEPAY_BASE_URL` at a UAT/dev/sandbox host. |
+| `FONEPAY_BASE_URL` / `FONEPAY_USERNAME` / `FONEPAY_PASSWORD` / `FONEPAY_PRIVATE_KEY` / `FONEPAY_TERMINAL_ID` | O/P | Fonepay Dynamic QR — **all-or-nothing**: partial configuration refuses boot. The base URL must be an absolute `https://` URL and the private key must parse as a PKCS8 RSA key (Base64/hex, no PEM headers) — both are verified at boot. |
 | `BACKEND_PUBLIC_URL` | O, P | Public HTTPS base URL of the API (outbound references). |
 | `PUBLIC_BASE_URL` | **R**, P | Public HTTPS storefront base URL (SEO absolute URLs + password-reset email links). |
 
 CyberSource settlement is **pull-based**: the signed Unified Checkout response
 token is verified server-side against the CyberSource JWKS. There is no inbound
 webhook to register or firewall.
+
+Fonepay follows the same pull-based model: the per-QR WebSocket is a
+notification only, and settlement comes exclusively from the server-to-server
+Status API (`thirdPartyDynamicQrGetStatus`). A gateway is offered at checkout
+only while the server reports it available
+(`GET /api/v1/customer/payments/gateways`), which is derived from
+`FONEPAY_ENABLED` + the credential set above — so a misconfigured gateway can
+never be presented as payable. See
+[`FONEPAY_INTEGRATION.md`](./FONEPAY_INTEGRATION.md) for the end-to-end flow,
+request signing, settlement rules and the Fonepay onboarding checklist.
 
 ### Transactional email / password reset (SMTP)
 | Variable | Class | Notes |

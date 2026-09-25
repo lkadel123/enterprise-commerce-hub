@@ -1,5 +1,5 @@
 import { apiFetch } from "./client";
-import type { ApiEnvelope, CustomerPaymentResult } from "@/types";
+import type { ApiEnvelope, CustomerPaymentGatewayOption, CustomerPaymentResult } from "@/types";
 
 /**
  * Customer payments API client.
@@ -27,6 +27,20 @@ import type { ApiEnvelope, CustomerPaymentResult } from "@/types";
 export type CustomerPaymentGatewayValue = "CYBERSOURCE" | "FONEPAY";
 
 export const customerPaymentsApi = {
+  /**
+   * GET /customer/payments/gateways
+   * Payment options checkout may render, with server-derived availability.
+   * `available` comes from the backend provider registry (enabled AND fully
+   * configured), so a disabled/unconfigured gateway (Fonepay by default) is
+   * never presented as payable — enabling it on the server makes it appear
+   * here without a storefront deploy. Requires an authenticated customer.
+   */
+  gateways(): Promise<ApiEnvelope<{ gateways: CustomerPaymentGatewayOption[] }>> {
+    return apiFetch<ApiEnvelope<{ gateways: CustomerPaymentGatewayOption[] }>>(
+      "/customer/payments/gateways",
+    );
+  },
+
   /**
    * POST /customer/payments/:orderId/initiate
    * Returns a `CustomerPaymentResult`. For "CYBERSOURCE" the `clientToken` is

@@ -2,6 +2,7 @@ import { http, HttpResponse } from "msw";
 import type { DefaultBodyType } from "msw";
 
 import { API_BASE_URL } from "@/config/env";
+import type { CustomerPaymentGatewayOption } from "@/types";
 import { fail, ok } from "../fixtures/catalog";
 
 interface CartItem {
@@ -18,6 +19,7 @@ export const recordedBodies: Record<string, DefaultBodyType[]> = {};
 export function resetCommerceState(): void {
   carts.clear();
   wishlists.clear();
+  paymentGateways = defaultPaymentGateways();
   for (const key of Object.keys(recordedBodies)) delete recordedBodies[key];
 }
 
@@ -39,6 +41,47 @@ const c = `${API_BASE_URL}/cart`;
 const w = `${API_BASE_URL}/wishlist`;
 const o = `${API_BASE_URL}/customer/orders`;
 const pay = `${API_BASE_URL}/customer/payments`;
+
+/**
+ * Payment options the mock backend reports at `GET /customer/payments/gateways`.
+ *
+ * Mirrors the production default: COD is always available, Cybersource is
+ * configured in the mock environment, and Fonepay is DISABLED — a test that
+ * needs Fonepay must opt in via {@link setPaymentGatewaysForTests}, exactly as
+ * an operator would have to enable it server-side.
+ */
+function defaultPaymentGateways(): CustomerPaymentGatewayOption[] {
+  return [
+    {
+      gateway: "COD",
+      label: "Cash on Delivery",
+      hint: "Pay in cash when your order arrives.",
+      method: "Cash on Delivery",
+      available: true,
+    },
+    {
+      gateway: "FONEPAY",
+      label: "Fonepay QR",
+      hint: "Scan a payment QR with any Fonepay-supported banking app.",
+      method: "Bank Transfer",
+      available: false,
+    },
+    {
+      gateway: "CYBERSOURCE",
+      label: "Credit / Debit Card",
+      hint: "Pay securely by card with Cybersource Unified Checkout.",
+      method: "Credit Card",
+      available: true,
+    },
+  ];
+}
+
+let paymentGateways = defaultPaymentGateways();
+
+/** Replace the gateways the mock backend reports (e.g. to enable Fonepay). */
+export function setPaymentGatewaysForTests(options: CustomerPaymentGatewayOption[]): void {
+  paymentGateways = options;
+}
 
 /* ---------------------------------- cart ---------------------------------- */
 const cartHandlers = [
@@ -162,6 +205,11 @@ const orderHandlers = [
 
 /* -------------------------------- payments -------------------------------- */
 const paymentHandlers = [
+  http.get(`${pay}/gateways`, ({ request }) => {
+    if (!requireAuth(request)) return unauthorized();
+    return HttpResponse.json(ok({ gateways: paymentGateways }));
+  }),
+
   http.post(`${pay}/:orderId/initiate`, async ({ request }) => {
     if (!requireAuth(request)) return unauthorized();
     const body = (await request.json()) as DefaultBodyType;

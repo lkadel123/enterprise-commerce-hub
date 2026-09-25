@@ -61,6 +61,47 @@ afterAll(async () => {
   await disconnect();
 });
 
+describe("Payment gateway catalog", () => {
+  it("requires authentication", async () => {
+    const res = await request(app).get("/api/v1/customer/payments/gateways");
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe("UNAUTHENTICATED");
+  });
+
+  it("reports availability from the provider registry, never from the request", async () => {
+    const account = await seedCustomerAccount({ email: "gateways@test.com" });
+    const { header } = customerAccessTokenFor(account);
+
+    const res = await request(app).get("/api/v1/customer/payments/gateways").set(header);
+    expect(res.status).toBe(200);
+
+    const gateways = res.body.data.gateways as {
+      gateway: string;
+      label: string;
+      method: string;
+      available: boolean;
+    }[];
+    // Stable, ordered catalog: the storefront renders this list (filtered to
+    // `available`), so the gateway→method pairing must never drift.
+    expect(gateways.map((option) => option.gateway)).toEqual(["COD", "FONEPAY", "CYBERSOURCE"]);
+    expect(gateways.map((option) => option.method)).toEqual([
+      "Cash on Delivery",
+      "Bank Transfer",
+      "Credit Card",
+    ]);
+    expect(gateways.find((option) => option.gateway === "COD")?.available).toBe(true);
+    // Availability mirrors the REGISTERED provider rather than the request.
+    // Other tests in this file install stubs on the registry, so the expected
+    // value is read from the same registry.
+    expect(gateways.find((option) => option.gateway === "FONEPAY")?.available).toBe(
+      Boolean(paymentProviderMap.FONEPAY),
+    );
+    expect(gateways.find((option) => option.gateway === "CYBERSOURCE")?.available).toBe(
+      Boolean(paymentProviderMap.CYBERSOURCE),
+    );
+  });
+});
+
 describe("Customer payments", () => {
   it("rejects unauthenticated initiate/verify/status with 401", async () => {
     const { product } = await seedCommerce();

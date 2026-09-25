@@ -12,6 +12,18 @@ import type {
  * are never accepted from the client.
  */
 export const customerPaymentController = {
+  /**
+   * GET /customer/payments/gateways
+   *
+   * Server-discovered payment options for checkout. Availability comes from the
+   * provider registry, so the storefront never decides on its own whether a
+   * gateway (e.g. Fonepay) exists in this deployment.
+   */
+  gateways: asyncHandler(async (_req, res) => {
+    const gateways = customerPaymentService.getAvailableGateways();
+    sendSuccess(res, { gateways }, "Payment options retrieved.");
+  }),
+
   initiate: asyncHandler(async (req, res) => {
     const orderId = req.params.orderId as string;
     const gateway = req.body.gateway as CustomerPaymentGateway;

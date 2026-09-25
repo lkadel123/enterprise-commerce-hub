@@ -349,6 +349,30 @@ export type PaymentProvider =
  */
 export type PaymentGatewayHint = "FONEPAY" | "CYBERSOURCE";
 
+/**
+ * Payment options the checkout may offer: the offline "COD" option plus the
+ * online {@link PaymentGatewayHint} gateways.
+ */
+export type CustomerPaymentGateway = "COD" | PaymentGatewayHint;
+
+/**
+ * One checkout payment option, exactly as the backend reports it
+ * (`GET /api/v1/customer/payments/gateways`).
+ *
+ * `available` is derived SERVER-SIDE from the backend provider registry
+ * (enabled + fully configured), never from the browser, so a disabled or
+ * half-configured gateway (Fonepay by default) can never be presented as
+ * payable. `method` is the order `PaymentMethod` the choice sends and
+ * `gateway` is the gateway that settles it ("COD" has none).
+ */
+export interface CustomerPaymentGatewayOption {
+  gateway: CustomerPaymentGateway;
+  label: string;
+  hint: string;
+  method: PaymentMethod;
+  available: boolean;
+}
+
 export type RefundStatus = "PENDING" | "SUCCESS" | "FAILED" | "UNSUPPORTED";
 
 export interface OrderAddress {

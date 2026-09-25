@@ -1,9 +1,11 @@
 import QRCode from "qrcode";
 
+import { logger } from "../../../../utils/logger.js";
 import {
   FONEPAY_CURRENCY,
   FONEPAY_QR_WAIT_WINDOW_MS,
   generateFonepayReferenceLabel,
+  isRecognizedFonepayStatus,
   mapFonepayStatus,
   toFonepayAmount,
 } from "./fonepay.config.js";
@@ -114,6 +116,14 @@ export class FonepayProvider implements PaymentProviderInterface {
    * - `merchantCode` must equal the configured terminal id;
    * - `requestedAmount` and `totalTransactionAmount` must agree with each other.
    * Any violation fails the payment CLOSED — never Pending, never Paid.
+   *
+   * The `_signature` argument is deliberately unused: the Fonepay Intent/QR
+   * status API is a server-to-server GET of the merchant's OWN transaction over
+   * TLS (the request, not the response, carries the RSA signature), so the
+   * provider-authenticated response — not a browser-supplied string — is the
+   * proof. A browser can therefore never assert success: the service reaches
+   * this method only for a reference it stored itself at initiation, and the
+   * response must still satisfy the reference/terminal/amount/currency rules.
    */
   async verify(
     providerTransactionId: string,
@@ -201,6 +211,26 @@ export class FonepayProvider implements PaymentProviderInterface {
     }
 
     const mapped = mapFonepayStatus(status.paymentStatus);
+    if (!isRecognizedFonepayStatus(status.paymentStatus)) {
+      // Provider vocabulary changed/unknown: the payment stays PENDING (see
+      // mapFonepayStatus). Surface it once per verification so an operator can
+      // extend the mapping instead of silently never settling orders.
+      logger.warn(
+        {
+          provider: "FONEPAY",
+          referenceLabel,
+          providerStatus: status.paymentStatus,
+          mappedStatus: mapped,
+        },
+        "Fonepay returned an unrecognized paymentStatus — payment left Pending",
+      );
+    }
+    // Reconcile-able gateway transaction id: Fonepay's own trace id when
+    // supplied, else the PRN. Never a browser-supplied value.
+    const gatewayTransactionId =
+      status.fonepayTraceId !== undefined && status.fonepayTraceId !== null
+        ? String(status.fonepayTraceId)
+        : status.prn;
     return {
       status: mapped,
       amount: requestedAmount ?? 0,
@@ -210,6 +240,12 @@ export class FonepayProvider implements PaymentProviderInterface {
         merchantCode: status.merchantCode,
         paymentStatus: status.paymentStatus,
         fonepayTraceId: status.fonepayTraceId ?? null,
+        transactionId: gatewayTransactionId,
+        // Fonepay settles in NPR only and its status response carries no
+        // currency field, so the declared currency is asserted explicitly here
+        // and re-checked against the currency the order's payment was
+        // initiated in (customer-payment.service.ts Paid path).
+        currency: FONEPAY_CURRENCY,
         requestedAmount: status.requestedAmount ?? null,
         totalTransactionAmount: status.totalTransactionAmount ?? null,
         paymentMessage: status.paymentMessage ?? null,
