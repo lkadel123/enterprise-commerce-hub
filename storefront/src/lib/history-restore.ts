@@ -70,4 +70,3 @@ export function useHistoryRestoreSync(
     return () => window.removeEventListener("pageshow", onPageShow);
   }, [resync, queryClient]);
 }
-

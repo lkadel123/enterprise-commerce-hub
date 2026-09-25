@@ -101,4 +101,3 @@ describe("useHistoryRestoreSync", () => {
     expect(resync).not.toHaveBeenCalled();
   });
 });
-
