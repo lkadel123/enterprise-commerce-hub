@@ -51,7 +51,7 @@ jobs:
         run: npm run generate:routes --prefix storefront
 
       - name: Verify generated routes
-        run: test -f storefront/app/utils/routeTree.gen.ts
+        run: test -f storefront/src/routeTree.gen.ts
 
       - name: Lint root/admin
         run: npm run lint
