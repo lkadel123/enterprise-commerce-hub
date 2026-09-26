@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { env } from "node:process";
 
 const API_URL = "http://localhost:4000/api/v1";
 
@@ -8,7 +9,7 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   fullyParallel: false,
   workers: 1,
-  retries: process.env.CI ? 1 : 0,
+  retries: env.CI ? 1 : 0,
   reporter: [["list"]],
   use: {
     baseURL: "http://localhost:8090",
@@ -20,7 +21,7 @@ export default defineConfig({
       command: "npx tsx scripts/e2e-server.mts",
       cwd: "../backend",
       url: "http://localhost:4000/health",
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: !env.CI,
       timeout: 180_000,
       // Surface backend request/response logs in the Playwright output so
       // auth failures are diagnosable from the test log alone.
@@ -32,7 +33,7 @@ export default defineConfig({
       // server-rendered output, not the dev server.
       command: "npm run build && node .output/server/index.mjs",
       url: "http://localhost:8090",
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: !env.CI,
       timeout: 600_000,
       env: {
         VITE_API_URL: API_URL,
