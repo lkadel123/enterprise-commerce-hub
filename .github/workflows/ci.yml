@@ -8,88 +8,183 @@ on:
 jobs:
   install:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      # Root app (admin) dependencies via npm.
-      - run: npm ci
-      - run: npm ci --prefix backend
-      - run: npm ci --prefix storefront
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        run: npm ci --prefix backend
+
+      - name: Install storefront dependencies
+        run: npm ci --prefix storefront
+
 
   lint-typecheck:
     needs: install
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci
-      - run: npm ci --prefix storefront
-      - run: npm ci --prefix backend
-      # routeTree.gen.ts is gitignored — generate it before typechecking.
-      - run: npm run generate:routes --prefix storefront
-      - name: Lint (root/admin)
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install storefront dependencies
+        run: npm ci --prefix storefront
+
+      - name: Install backend dependencies
+        run: npm ci --prefix backend
+
+      # routeTree.gen.ts is gitignored.
+      - name: Generate storefront routes
+        run: npm run generate:routes --prefix storefront
+
+      - name: Verify generated routes
+        run: test -f storefront/app/utils/routeTree.gen.ts
+
+      - name: Lint root/admin
         run: npm run lint
+
       - name: Design Dashboard typecheck
         run: npm run typecheck
+
       - name: Storefront typecheck
         run: npm run typecheck --prefix storefront
+
       - name: Backend typecheck
         run: npm run typecheck --prefix backend
+
       - name: Backend test typecheck
         run: npm run test:typecheck --prefix backend
+
 
   backend-tests:
     needs: install
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci --prefix backend
-      # Cache in-memory MongoDB binaries (downloaded on first use).
-      - uses: actions/cache@v4
+
+      - name: Install backend dependencies
+        run: npm ci --prefix backend
+
+      - name: Cache MongoDB binaries
+        uses: actions/cache@v4
         with:
           path: ~/.cache/mongodb-binaries
           key: mongodb-binaries-${{ runner.os }}
-      - name: Backend integration tests (Vitest + Supertest)
+
+      - name: Backend integration tests
         run: npm test --prefix backend
+
 
   storefront-tests:
     needs: install
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci
-      - run: npm ci --prefix storefront
-      # routeTree.gen.ts is gitignored — generate it before testing.
-      - run: npm run generate:routes --prefix storefront
-      - name: Storefront unit / component / integration / contract tests
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install storefront dependencies
+        run: npm ci --prefix storefront
+
+      # routeTree.gen.ts is gitignored.
+      - name: Generate storefront routes
+        run: npm run generate:routes --prefix storefront
+
+      - name: Verify generated routes
+        run: test -f storefront/app/utils/routeTree.gen.ts
+
+      - name: Storefront tests
         run: npm test --prefix storefront
+
 
   build:
     needs: [lint-typecheck, backend-tests, storefront-tests]
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci
-      - run: npm ci --prefix storefront
-      # routeTree.gen.ts is gitignored — generate it before building.
-      - run: npm run generate:routes --prefix storefront
-      - name: Build Design Dashboard (Vite + Nitro SSR)
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install storefront dependencies
+        run: npm ci --prefix storefront
+
+      # routeTree.gen.ts is gitignored.
+      - name: Generate storefront routes
+        run: npm run generate:routes --prefix storefront
+
+      - name: Verify generated routes
+        run: test -f storefront/app/utils/routeTree.gen.ts
+
+      - name: Build Design Dashboard
         run: npm run build
-      - name: Build storefront (Vite + Nitro SSR)
-        run: VITE_API_URL=https://api.nasbonlinemart.com/api/v1 npm run build --prefix storefront
+
+      - name: Build storefront
+        working-directory: storefront
+        env:
+          VITE_API_URL: https://api.nasbonlinemart.com/api/v1
+          VITE_PUBLIC_ORIGIN: https://nasbonlinemart.com
+          NODE_ENV: production
+        run: npm run build
+
+      # IMPORTANT:
+      # Do not upload until we prove that the production build
+      # actually created storefront/.output.
+      - name: Verify storefront production build
+        run: |
+          echo "=== STOREFRONT DIRECTORY ==="
+          ls -la storefront/
+
+          echo ""
+          echo "=== .OUTPUT DIRECTORY ==="
+          test -d storefront/.output
+          ls -lah storefront/.output
+
+          echo ""
+          echo "=== .OUTPUT STRUCTURE ==="
+          find storefront/.output -maxdepth 3 -type f | sort | head -200
+
+          echo ""
+          echo "=== API URL CHECK ==="
+          grep -R "https://api.nasbonlinemart.com/api/v1" storefront/.output \
+            --exclude="*.map" \
+            | head -20 || true
+
+      - name: Bundle size summary
+        run: node scripts/bundle-summary.mjs storefront/.output
+
+      - name: Release-readiness check
+        run: node scripts/release-check.mjs
+
       - name: Upload storefront production build
         id: upload
         uses: actions/upload-artifact@v4
@@ -98,58 +193,90 @@ jobs:
           path: storefront/.output
           if-no-files-found: error
           retention-days: 7
+          compression-level: 6
 
       - name: Verify uploaded artifact
         run: |
+          echo "=== GITHUB ARTIFACT ==="
           echo "Artifact ID: ${{ steps.upload.outputs.artifact-id }}"
           echo "Artifact URL: ${{ steps.upload.outputs.artifact-url }}"
           echo "Artifact Digest: ${{ steps.upload.outputs.artifact-digest }}"
-      - name: Bundle size summary (report only — no arbitrary budget gate)
-        run: node scripts/bundle-summary.mjs storefront/.output
-      - name: Release-readiness check (provider-neutral, report-only)
-        run: node scripts/release-check.mjs
 
-  # Phase 12 — production hardening gates.
-  # Self-contained: no production credentials are required (the security script
-  # injects its own inert placeholder gateway keys).
+          test -n "${{ steps.upload.outputs.artifact-id }}"
+          test -n "${{ steps.upload.outputs.artifact-url }}"
+          test -n "${{ steps.upload.outputs.artifact-digest }}"
+
+          echo ""
+          echo "Artifact upload verification: SUCCESS"
+
+
   phase12-prod-checks:
     needs: [lint-typecheck, backend-tests]
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci --prefix backend
-      - name: Production configuration validation (fail-fast env checks)
+
+      - name: Install backend dependencies
+        run: npm ci --prefix backend
+
+      - name: Production configuration validation
         run: npm run test:typecheck --prefix backend
-      - name: Production security verification (headers, CORS, error envelopes)
+
+      - name: Production security verification
         run: npm run check:prod-security --prefix backend
+
 
   e2e-accessibility:
     needs: build
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci
-      - run: npm ci --prefix storefront
-      - run: npm ci --prefix backend
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install storefront dependencies
+        run: npm ci --prefix storefront
+
+      - name: Install backend dependencies
+        run: npm ci --prefix backend
+
       - uses: actions/cache@v4
         with:
           path: |
             ~/.cache/ms-playwright
             ~/.cache/mongodb-binaries
           key: e2e-bins-${{ runner.os }}-${{ hashFiles('storefront/package-lock.json') }}
+
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
         working-directory: storefront
-      - name: Playwright E2E + axe accessibility
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright E2E + accessibility
+        env:
+          CI: true
+          NODE_ENV: production
+          VITE_API_URL: http://localhost:4000/api/v1
+          VITE_PUBLIC_ORIGIN: http://localhost:8090
+          PORT: 8090
         run: npm run test:e2e --prefix storefront
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload Playwright artifacts
         if: failure()
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-artifacts
           path: storefront/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
