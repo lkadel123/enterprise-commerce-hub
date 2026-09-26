@@ -89,7 +89,7 @@ jobs:
       - name: Build Design Dashboard (Vite + Nitro SSR)
         run: npm run build
       - name: Build storefront (Vite + Nitro SSR)
-        run: npm run build --prefix storefront
+        run: VITE_API_URL=https://api.nasbonlinemart.com/api/v1 npm run build --prefix storefront
       - name: Bundle size summary (report only — no arbitrary budget gate)
         run: node scripts/bundle-summary.mjs storefront/.output
       - name: Release-readiness check (provider-neutral, report-only)
