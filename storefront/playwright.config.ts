@@ -1,8 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const env = (globalThis as typeof globalThis & {
-  process?: { env: Record<string, string | undefined> };
-}).process?.env ?? {};
+const env =
+  (
+    globalThis as typeof globalThis & {
+      process?: { env: Record<string, string | undefined> };
+    }
+  ).process?.env ?? {};
 
 const API_URL = "http://localhost:4000/api/v1";
 
