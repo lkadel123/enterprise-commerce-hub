@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
-import { env } from "node:process";
+
+const env = (globalThis as typeof globalThis & {
+  process?: { env: Record<string, string | undefined> };
+}).process?.env ?? {};
 
 const API_URL = "http://localhost:4000/api/v1";
 
@@ -20,6 +23,9 @@ export default defineConfig({
     {
       command: "npx tsx scripts/e2e-server.mts",
       cwd: "../backend",
+      env: {
+        PORT: "4000",
+      },
       url: "http://localhost:4000/health",
       reuseExistingServer: !env.CI,
       timeout: 180_000,
