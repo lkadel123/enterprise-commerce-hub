@@ -115,7 +115,7 @@ jobs:
         run: npm run generate:routes --prefix storefront
 
       - name: Verify generated routes
-        run: test -f storefront/app/utils/routeTree.gen.ts
+        run: test -f storefront/src/routeTree.gen.ts
 
       - name: Storefront tests
         run: npm test --prefix storefront
@@ -143,7 +143,7 @@ jobs:
         run: npm run generate:routes --prefix storefront
 
       - name: Verify generated routes
-        run: test -f storefront/app/utils/routeTree.gen.ts
+        run: test -f storefront/src/routeTree.gen.ts
 
       - name: Build Design Dashboard
         run: npm run build
