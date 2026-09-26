@@ -91,10 +91,19 @@ jobs:
       - name: Build storefront (Vite + Nitro SSR)
         run: VITE_API_URL=https://api.nasbonlinemart.com/api/v1 npm run build --prefix storefront
       - name: Upload storefront production build
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: storefront-production
           path: storefront/.output
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Verify uploaded artifact
+        run: |
+          echo "Artifact ID: ${{ steps.upload.outputs.artifact-id }}"
+          echo "Artifact URL: ${{ steps.upload.outputs.artifact-url }}"
+          echo "Artifact Digest: ${{ steps.upload.outputs.artifact-digest }}"
       - name: Bundle size summary (report only — no arbitrary budget gate)
         run: node scripts/bundle-summary.mjs storefront/.output
       - name: Release-readiness check (provider-neutral, report-only)
